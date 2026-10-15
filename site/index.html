@@ -106,6 +106,7 @@ footer{margin-top:24px;color:var(--muted);font-size:12px}
 footer a{color:var(--accent)}
 </style>
 <link rel="stylesheet" href="agentes.css">
+<link rel="stylesheet" href="precos.css">
 </head>
 <body>
 <div class="wrap">
@@ -492,6 +493,7 @@ async function openDrawer(r){
       ${items.map(it => `<tr data-n="${it.numeroItem}" data-res="${it.temResultado ? 1 : 0}"><td>${it.numeroItem}</td><td>${esc((it.descricao||'').slice(0,220))}${(it.descricao||'').length > 220 ? '…' : ''}<div class="m">${esc(it.materialOuServicoNome || '')} · ${esc(it.criterioJulgamentoNome || '')}${it.orcamentoSigiloso ? ' · orçamento sigiloso' : ''}</div><div class="res m"></div></td>
       <td class="num">${num(it.quantidade || 0)} ${esc(it.unidadeMedida || '')}</td><td class="num">${brl(it.valorUnitarioEstimado)}</td><td class="num">${brl(it.valorTotal)}</td></tr>`).join('')}
       </tbody></table></div>${items.length >= 200 ? '<div class="m">Mostrando os 200 primeiros itens.</div>' : ''}`;
+    window.dispatchEvent(new CustomEvent('itens-carregados', {detail: {r, items}})); // precos.js
     // vencedores dos itens já homologados (até 30, para não sobrecarregar o portal)
     const withRes = [...d.querySelectorAll('tr[data-res="1"]')].slice(0, 30);
     for (const tr of withRes) {
@@ -522,5 +524,6 @@ render();
 loadData();
 </script>
 <script type="module" src="agentes.js"></script>
+<script type="module" src="precos.js"></script>
 </body>
 </html>

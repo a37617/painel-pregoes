@@ -2,3 +2,6 @@ site/data/
 node_modules/
 .claude/
 painel-pregoes.html
+servidor/.pesquisa/
+servidor/cache-precos.json
+servidor/senha.txt

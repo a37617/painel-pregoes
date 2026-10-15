@@ -7,6 +7,8 @@ import os from 'node:os';
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { criarPesquisa, verPesquisa, pesquisaDisponivel } from './precos.mjs';
 
 const PORT = Number(process.env.PORT) || 8080;
 const SITE = fileURLToPath(new URL('../site/', import.meta.url));
@@ -37,8 +39,55 @@ async function atualizarDados() {
   }
 }
 
+const json = (res, code, obj) => res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(obj));
+
+// A pesquisa de preços dispara o Claude: só vale neste computador ou com a senha do servidor.
+const ARQ_SENHA = fileURLToPath(new URL('senha.txt', import.meta.url));
+let SENHA = (await readFile(ARQ_SENHA, 'utf8').catch(() => '')).trim();
+if (!SENHA) {
+  SENHA = randomBytes(9).toString('base64url');
+  await writeFile(ARQ_SENHA, SENHA + '\n');
+}
+const ehLocal = req => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+function senhaOk(req) {
+  const a = Buffer.from(String(req.headers['x-senha'] || ''));
+  const b = Buffer.from(SENHA);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+const tentativas = new Map(); // ip -> [horários de senhas erradas]
+function bloqueado(ip) {
+  const t = (tentativas.get(ip) || []).filter(x => Date.now() - x < 15 * 60000);
+  tentativas.set(ip, t);
+  return t.length >= 10;
+}
+
+async function api(req, res, path) {
+  const liberado = ehLocal(req) || senhaOk(req);
+  if (path === '/api/status') return json(res, 200, { pesquisa: pesquisaDisponivel(), liberado });
+  if (path.startsWith('/api/pesquisa-preco')) {
+    const ip = req.socket.remoteAddress;
+    if (bloqueado(ip)) return json(res, 429, { erro: 'Muitas senhas erradas. Tente de novo em 15 minutos.' });
+    if (!liberado) {
+      if (req.headers['x-senha']) tentativas.get(ip).push(Date.now());
+      return json(res, 401, { erro: 'Senha necessária' });
+    }
+  }
+  if (path === '/api/pesquisa-preco' && req.method === 'POST') {
+    let body = '';
+    for await (const c of req) { body += c; if (body.length > 200000) return json(res, 413, { erro: 'pedido grande demais' }); }
+    let pedido;
+    try { pedido = JSON.parse(body); } catch { return json(res, 400, { erro: 'pedido inválido' }); }
+    try { return json(res, 202, criarPesquisa(pedido)); }
+    catch (e) { return json(res, e.code || 500, { erro: e.message }); }
+  }
+  const m = path.match(/^\/api\/pesquisa-preco\/(\d+)$/);
+  if (m) { const j = verPesquisa(m[1]); return j ? json(res, 200, j) : json(res, 404, { erro: 'pesquisa não encontrada' }); }
+  return json(res, 404, { erro: 'rota não encontrada' });
+}
+
 const server = http.createServer(async (req, res) => {
   let path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  if (path.startsWith('/api/')) return api(req, res, path);
   if (path.endsWith('/')) path += 'index.html';
   const file = normalize(join(SITE, path));
   if (!file.startsWith(normalize(SITE))) { res.writeHead(403).end(); return; }
@@ -61,6 +110,7 @@ server.listen(PORT, '0.0.0.0', async () => {
   console.log('Painel de Pregões no ar. Abra em qualquer aparelho do Wi-Fi:');
   ips.forEach(ip => console.log(`   http://${ip}:${PORT}`));
   console.log(`   (neste computador: http://localhost:${PORT})`);
+  console.log(`Senha da pesquisa de preços em outros aparelhos: ${SENHA}  (está em servidor\\senha.txt)`);
   console.log('Deixe esta janela aberta. Para parar, feche-a ou aperte Ctrl+C.\n');
   await atualizarDados();
   setInterval(atualizarDados, ATUALIZAR_MIN * 60000);
