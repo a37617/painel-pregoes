@@ -88,9 +88,10 @@ window.addEventListener('itens-carregados', e => {
 
   const resultados = {};
   const porNumero = Object.fromEntries(items.map(it => [it.numeroItem, it]));
-  tabela.querySelector('thead tr').insertAdjacentHTML('beforeend', '<th>Mercado e lucro (IA)</th>');
+  // O resultado vai numa linha própria logo abaixo de cada item, na largura toda (não corta no painel lateral).
   tabela.querySelectorAll('tbody tr[data-n]').forEach(tr => {
-    tr.insertAdjacentHTML('beforeend', `<td class="pz-cel"><button type="button" class="pz-um" title="Pesquisar o preço deste item na internet">🔎 Pesquisar</button></td>`);
+    tr.classList.add('pz-item');
+    tr.insertAdjacentHTML('afterend', `<tr class="pz-linha" data-pz="${tr.dataset.n}"><td></td><td colspan="4" class="pz-cel"><button type="button" class="pz-um" title="Pesquisar o preço deste item na internet">🔎 Pesquisar preço deste item</button></td></tr>`);
   });
 
   box.innerHTML = `
@@ -110,7 +111,7 @@ window.addEventListener('itens-carregados', e => {
     tabela.querySelectorAll('tbody tr[data-n]').forEach(tr => {
       const num = +tr.dataset.n, r = resultados[num];
       if (!r) return;
-      tr.querySelector('.pz-cel').innerHTML = celula(porNumero[num], r);
+      tabela.querySelector(`tr[data-pz="${num}"] .pz-cel`).innerHTML = celula(porNumero[num], r);
       const c = calcular(porNumero[num], r);
       if (c) { soma += c.total; n++; } else semPreco++;
     });
@@ -121,7 +122,7 @@ window.addEventListener('itens-carregados', e => {
     const lote = nums.slice(0, status.pesquisa.maxItens);
     const botoes = box.querySelectorAll('button');
     botoes.forEach(b => b.disabled = true);
-    lote.forEach(num => { const td = tabela.querySelector(`tr[data-n="${num}"] .pz-cel`); if (td && !resultados[num]) td.innerHTML = '<span class="m">⏳ pesquisando…</span>'; });
+    lote.forEach(num => { const td = tabela.querySelector(`tr[data-pz="${num}"] .pz-cel`); if (td && !resultados[num]) td.innerHTML = '<span class="m">⏳ pesquisando…</span>'; });
     st.textContent = `Pesquisando ${lote.length} item(ns) na internet e conferindo as especificações… leva de 3 a 8 minutos.`;
     try {
       const corpo = {
@@ -145,7 +146,7 @@ window.addEventListener('itens-carregados', e => {
       redesenhar();
     } catch (err) {
       st.textContent = 'Não deu certo: ' + err.message;
-      lote.forEach(num => { const td = tabela.querySelector(`tr[data-n="${num}"] .pz-cel`); if (td && !resultados[num]) td.innerHTML = '<button type="button" class="pz-um">🔎 Tentar de novo</button>'; });
+      lote.forEach(num => { const td = tabela.querySelector(`tr[data-pz="${num}"] .pz-cel`); if (td && !resultados[num]) td.innerHTML = '<button type="button" class="pz-um">🔎 Tentar de novo</button>'; });
     } finally {
       box.querySelectorAll('button').forEach(b => b.disabled = false);
       ligarBotoes();
@@ -153,7 +154,7 @@ window.addEventListener('itens-carregados', e => {
   }
 
   function ligarBotoes() {
-    tabela.querySelectorAll('.pz-um').forEach(b => b.onclick = ev => { ev.stopPropagation(); pesquisar([+b.closest('tr').dataset.n]); });
+    tabela.querySelectorAll('.pz-um').forEach(b => b.onclick = ev => { ev.stopPropagation(); pesquisar([+b.closest('tr').dataset.pz]); });
   }
   ligarBotoes();
   box.querySelector('.pz-todos').onclick = () => {
