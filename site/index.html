@@ -277,9 +277,11 @@ async function loadData(){
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
     ALL = d.registros.map(prep);
-    const when = new Date(d.atualizadoEm);
+    // No servidor do Wi-Fi, "atualizadoLocalEm" é a última busca de pregões novos (a cada 30 min).
+    const when = new Date(d.atualizadoLocalEm && new Date(d.atualizadoLocalEm) > new Date(d.atualizadoEm) ? d.atualizadoLocalEm : d.atualizadoEm);
     const ageH = (Date.now() - when) / 36e5;
-    setStatus(`${num(ALL.length)} pregões com propostas abertas no Brasil · dados do PNCP atualizados em ${when.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}${ageH > 12 ? ' (desatualizado: confira o robô no GitHub Actions)' : ''}`);
+    const novos = d.novosLocais ? ` · ${num(d.novosLocais)} novo(s) desde a última coleta completa` : '';
+    setStatus(`${num(ALL.length)} pregões com propostas abertas no Brasil · dados do PNCP atualizados em ${when.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}${novos}${ageH > 12 ? ' (desatualizado: confira o robô no GitHub Actions)' : ''}`);
     render();
   } catch (err) {
     setStatus('Não consegui carregar os dados (' + err.message + '). Tente recarregar em instantes.');

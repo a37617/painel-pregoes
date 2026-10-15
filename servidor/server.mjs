@@ -1,14 +1,16 @@
 // Servidor do painel para a rede Wi-Fi de casa/escritório.
-// Serve a pasta site/ para qualquer aparelho da rede e mantém os dados atualizados
-// copiando o arquivo que o robô do GitHub publica (sem sobrecarregar o PNCP).
+// Serve a pasta site/ para qualquer aparelho da rede e mantém os dados atualizados:
+// a cada 30 minutos copia o arquivo completo que o robô do GitHub publica e busca
+// no PNCP só os pregões publicados depois dele.
 // Uso: node servidor/server.mjs   (ou dê dois cliques em iniciar-servidor.bat)
 import http from 'node:http';
 import os from 'node:os';
-import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, stat, appendFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { criarPesquisa, verPesquisa, pesquisaDisponivel } from './precos.mjs';
+import { buscarNovos } from './novos.mjs';
 
 const PORT = Number(process.env.PORT) || 8080;
 const SITE = fileURLToPath(new URL('../site/', import.meta.url));
@@ -24,19 +26,76 @@ const TIPOS = {
 
 const hora = () => new Date().toLocaleTimeString('pt-BR');
 
-async function atualizarDados() {
+// Além da janela, as mensagens vão para servidor/registro.log (útil quando a janela fica minimizada).
+const ARQ_LOG = fileURLToPath(new URL('registro.log', import.meta.url));
+for (const nivel of ['log', 'warn']) {
+  const original = console[nivel].bind(console);
+  console[nivel] = (...a) => {
+    original(...a);
+    appendFile(ARQ_LOG, `${new Date().toLocaleDateString('pt-BR')} ${a.join(' ')}\n`).catch(() => {});
+  };
+}
+stat(ARQ_LOG).then(s => { if (s.size > 2e6) return writeFile(ARQ_LOG, ''); }).catch(() => {});
+
+// Dados = arquivo completo do robô do GitHub (base) + pregões novos que este servidor
+// achou no PNCP depois dele (extras). Os extras ficam salvos para sobreviver a reinícios.
+const ARQ_NOVOS = fileURLToPath(new URL('novos.json', import.meta.url));
+let base = null;
+let extras = new Map();
+let ultimaBusca = null;
+try {
+  const s = JSON.parse(await readFile(ARQ_NOVOS, 'utf8'));
+  extras = new Map(s.registros.map(r => [r.c, r]));
+  ultimaBusca = s.ultimaBusca ? new Date(s.ultimaBusca) : null;
+} catch {}
+
+async function baixarBase() {
   try {
     const r = await fetch(ORIGEM, { signal: AbortSignal.timeout(120000) });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    const txt = await r.text();
-    const d = JSON.parse(txt); // garante que veio um arquivo válido antes de trocar
-    await mkdir(join(SITE, 'data'), { recursive: true });
-    await writeFile(DATA, txt);
-    console.log(`[${hora()}] Dados atualizados: ${d.registros.length.toLocaleString('pt-BR')} pregões (PNCP de ${new Date(d.atualizadoEm).toLocaleString('pt-BR')})`);
+    const d = await r.json();
+    if (!Array.isArray(d.registros)) throw new Error('arquivo inválido');
+    base = d;
   } catch (e) {
-    const tem = await stat(DATA).then(() => true, () => false);
-    console.warn(`[${hora()}] Não consegui atualizar os dados (${e.message}).${tem ? ' Continuo com os dados anteriores.' : ''}`);
+    if (!base) base = await readFile(DATA, 'utf8').then(JSON.parse).catch(() => null);
+    console.warn(`[${hora()}] Não consegui baixar os dados do GitHub (${e.message}).${base ? ' Continuo com os anteriores.' : ''}`);
   }
+}
+
+async function buscarNovosNoPncp() {
+  if (!base) return;
+  // Desde a última busca (ou desde a coleta completa do GitHub), com 1 hora de folga.
+  const desde = new Date(Math.max(new Date(base.atualizadoEm) - 36e5, ultimaBusca ? ultimaBusca - 36e5 : 0));
+  try {
+    const { registros, paginas, bloqueado, motivo } = await buscarNovos(desde);
+    for (const r of registros) extras.set(r.c, r);
+    // Com bloqueio, não avança a marca de tempo: o próximo ciclo busca de novo o mesmo período.
+    if (!bloqueado) ultimaBusca = new Date();
+    console.log(`[${hora()}] PNCP: ${registros.length} pregão(ões) publicado(s) desde ${desde.toLocaleString('pt-BR')} (${paginas} página(s))${bloqueado ? ` · parei antes do fim (${motivo}); continuo no próximo ciclo` : ''}`);
+  } catch (e) {
+    console.warn(`[${hora()}] Não consegui buscar os pregões novos no PNCP (${e.message}).`);
+  }
+}
+
+async function gravarDados() {
+  if (!base) return;
+  const agora = Date.now();
+  const naBase = new Set(base.registros.map(r => r.c));
+  // Some o que o GitHub já trouxe e o que já encerrou.
+  for (const [c, r] of extras) if (naBase.has(c) || (r.en && new Date(r.en) <= agora)) extras.delete(c);
+  const registros = base.registros.concat([...extras.values()]);
+  await mkdir(join(SITE, 'data'), { recursive: true });
+  await writeFile(DATA, JSON.stringify({ ...base, registros, novosLocais: extras.size, atualizadoLocalEm: ultimaBusca?.toISOString() }));
+  await writeFile(ARQ_NOVOS, JSON.stringify({ ultimaBusca, registros: [...extras.values()] })).catch(() => {});
+  console.log(`[${hora()}] Painel com ${registros.length.toLocaleString('pt-BR')} pregões (${extras.size} novo(s) ainda não coletado(s) pelo GitHub)`);
+}
+
+let rodando = false;
+async function atualizarDados() {
+  if (rodando) return;
+  rodando = true;
+  try { await baixarBase(); await buscarNovosNoPncp(); await gravarDados(); }
+  finally { rodando = false; }
 }
 
 const json = (res, code, obj) => res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' }).end(JSON.stringify(obj));

@@ -5,3 +5,5 @@ painel-pregoes.html
 servidor/.pesquisa/
 servidor/cache-precos.json
 servidor/senha.txt
+servidor/novos.json
+servidor/registro.log
