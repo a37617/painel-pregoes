@@ -26,6 +26,10 @@ GitHub Actions (a cada 3h) ──► scripts/sync.mjs baixa o PNCP ──► sit
 
 A extensão confere os dados a cada hora. Quando surge um pregão novo que bate com os seus filtros, ela mostra um número no ícone e uma notificação.
 
+## Servidor na rede Wi-Fi
+
+Dê dois cliques em **`iniciar-servidor.bat`** e deixe a janela aberta. O painel fica disponível para qualquer aparelho do mesmo Wi-Fi, no endereço que aparece na janela (ex.: `http://192.168.1.133:8080`). O servidor copia os dados publicados pelo robô do GitHub a cada 30 minutos, então funciona mesmo sem consultar o PNCP diretamente. A extensão pode ser baixada pelo botão **⬇ Extensão do Chrome** no topo do painel.
+
 ## Rodar localmente
 
 ```bash

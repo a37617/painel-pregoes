@@ -40,6 +40,9 @@ button{cursor:pointer}
 .btn-primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:600}
 .btn-primary:disabled{opacity:.6;cursor:wait}
 .btn-ghost{background:transparent}
+.extlink{font-size:14px;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:7px 9px;text-decoration:none}
+.extlink:hover{border-color:var(--accent);color:var(--accent)}
+footer code{background:var(--accent-soft);padding:1px 5px;border-radius:4px}
 .span2{grid-column:span 2}
 @media (max-width:520px){.span2{grid-column:span 1}}
 .status{margin:10px 2px;color:var(--muted);font-size:13px;min-height:20px;display:flex;gap:10px;align-items:center}
@@ -110,7 +113,10 @@ footer a{color:var(--accent)}
       <h1>Painel de Pregões</h1>
       <div class="sub">Todos os pregões com propostas abertas no PNCP, atualizados automaticamente · Lei 14.133/2021</div>
     </div>
-    <button class="btn-ghost" id="themeBtn" type="button" title="Alternar tema">◐ Tema</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn-ghost extlink" href="extensao.zip" download title="Baixar a extensão do Chrome que avisa quando surge pregão com as suas palavras-chave">⬇ Extensão do Chrome</a>
+      <button class="btn-ghost" id="themeBtn" type="button" title="Alternar tema">◐ Tema</button>
+    </div>
   </header>
 
   <form class="filters card" id="f" onsubmit="return false">
@@ -182,7 +188,7 @@ footer a{color:var(--accent)}
     <div class="pager" id="pager"></div>
   </section>
 
-  <footer>Fonte: <a href="https://pncp.gov.br/api/consulta/swagger-ui/index.html" target="_blank" rel="noopener">API de Consulta do PNCP</a>. Valores são estimativas publicadas pelo órgão; pregões com orçamento sigiloso aparecem sem valor. Confira sempre o edital original antes de participar.</footer>
+  <footer><p id="instalar"><b>Instalar a extensão:</b> baixe o <a href="extensao.zip" download>extensao.zip</a> e extraia numa pasta. No Chrome, abra <code>chrome://extensions</code>, ligue o <b>Modo do desenvolvedor</b>, clique em <b>Carregar sem compactação</b> e escolha a pasta extraída. Depois clique no ícone da extensão e cadastre suas palavras-chave.</p>Fonte: <a href="https://pncp.gov.br/api/consulta/swagger-ui/index.html" target="_blank" rel="noopener">API de Consulta do PNCP</a>. Valores são estimativas publicadas pelo órgão; pregões com orçamento sigiloso aparecem sem valor. Confira sempre o edital original antes de participar.</footer>
 </div>
 
 <div class="drawer-bg" id="dbg"></div>
