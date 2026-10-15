@@ -70,6 +70,15 @@ function celula(it, r) {
     ${detalhes}`;
 }
 
+// Serviços e itens julgados por desconto não têm um produto de loja para comparar.
+function semPesquisa(it) {
+  if (!it) return '';
+  const crit = String(it.criterioJulgamentoNome || '').toLowerCase();
+  if (crit.includes('desconto')) return `Julgamento por ${esc(it.criterioJulgamentoNome.toLowerCase())}: o lance é um percentual de desconto sobre uma tabela de referência (ex.: tabela de peças da montadora), não um preço por produto. Por isso não dá para calcular lucro pela internet: confira no edital qual tabela vale e quanto de desconto você consegue dar.`;
+  if (it.materialOuServico === 'S') return 'Serviço: a pesquisa na internet compara produtos de loja, e serviço depende de mão de obra, deslocamento e escala. Para ter uma referência, veja os vencedores de contratos parecidos no PNCP (o agente "Pesquisa de preços" do chat faz isso).';
+  return '';
+}
+
 window.addEventListener('itens-carregados', e => {
   const { r: pregao, items } = e.detail;
   const tabela = document.querySelector('#drawer table.items');
@@ -93,8 +102,12 @@ window.addEventListener('itens-carregados', e => {
   // O resultado vai numa linha própria logo abaixo de cada item, na largura toda (não corta no painel lateral).
   tabela.querySelectorAll('tbody tr[data-n]').forEach(tr => {
     tr.classList.add('pz-item');
-    tr.insertAdjacentHTML('afterend', `<tr class="pz-linha" data-pz="${tr.dataset.n}"><td></td><td colspan="4" class="pz-cel"><button type="button" class="pz-um" title="Pesquisar o preço deste item na internet">🔎 Pesquisar preço deste item</button></td></tr>`);
+    const motivo = semPesquisa(porNumero[tr.dataset.n]);
+    tr.insertAdjacentHTML('afterend', `<tr class="pz-linha" data-pz="${tr.dataset.n}"><td></td><td colspan="4" class="pz-cel">${motivo
+      ? `<span class="m">ℹ️ ${motivo}</span>`
+      : '<button type="button" class="pz-um" title="Pesquisar o preço deste item na internet">🔎 Pesquisar preço deste item</button>'}</td></tr>`);
   });
+  const pesquisaveis = items.filter(it => !semPesquisa(it)).map(it => it.numeroItem);
 
   box.innerHTML = `
     <button type="button" class="pz-todos">🔎 Pesquisar preços na internet (IA)</button>
@@ -161,7 +174,8 @@ window.addEventListener('itens-carregados', e => {
   }
   ligarBotoes();
   box.querySelector('.pz-todos').onclick = () => {
-    const faltam = items.map(it => it.numeroItem).filter(n => !resultados[n]);
+    const faltam = pesquisaveis.filter(n => !resultados[n]);
+    if (!faltam.length) { st.textContent = pesquisaveis.length ? 'Todos os produtos já foram pesquisados.' : 'Este pregão só tem serviços ou itens por desconto: não há produto para pesquisar.'; return; }
     if (faltam.length > status.pesquisa.maxItens) st.textContent = `Pesquisando os ${status.pesquisa.maxItens} primeiros itens; clique de novo para os próximos.`;
     pesquisar(faltam);
   };
