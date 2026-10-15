@@ -27,18 +27,45 @@ function calcular(it, r) {
   return { custo, un, total: un * qtd, margem: un / est };
 }
 
+const ICONE = { atende: '✅', nao_atende: '❌', nao_confirmado: '❔' };
+const SELO = { sim: ['pz-alta', 'atende tudo'], parcial: ['pz-media', 'sem confirmar tudo'], nao: ['pz-ruim-bg', 'não atende'] };
+
+function fonteHtml(f) {
+  const [cls, txt] = SELO[f.compativel] || SELO.parcial;
+  const falhas = (f.especificacoes || []).filter(x => x.status !== 'atende');
+  return `<li><span class="pz-conf ${cls}">${txt}</span> <a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.loja)}</a>: <b>${brl(f.preco)}</b>${f.usado_no_preco ? ' <span class="pz-bom">· entrou no preço</span>' : ''}
+    <div class="m">${esc(f.produto || '')}${f.verificado_na_pagina ? '' : ' · página não abriu, conferido pela busca'}</div>
+    ${falhas.length ? `<div class="m">${falhas.map(x => `${ICONE[x.status]} ${esc(x.especificacao)}${x.detalhe ? `: ${esc(x.detalhe)}` : ''}`).join('<br>')}</div>` : ''}</li>`;
+}
+
+// Quadro: cada especificação exigida x cada loja.
+function quadro(r) {
+  const exig = r.especificacoes_exigidas || [], fontes = r.fontes || [];
+  if (!exig.length || !fontes.length) return '';
+  const norm = s => String(s).toLowerCase();
+  const status = (f, e) => (f.especificacoes || []).find(x => norm(x.especificacao) === norm(e))?.status || 'nao_confirmado';
+  return `<div class="pz-quadro"><table><thead><tr><th>Especificação do edital</th>${fontes.map(f => `<th title="${esc(f.produto || '')}">${esc(f.loja)}</th>`).join('')}</tr></thead>
+    <tbody>${exig.map(e => `<tr><td>${esc(e)}</td>${fontes.map(f => `<td>${ICONE[status(f, e)]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
 function celula(it, r) {
   if (!r) return '';
-  if (!(r.preco_unitario_mediano > 0)) return `<span class="pz-baixa">Não encontrado</span>${r.observacao ? `<div class="m">${esc(r.observacao)}</div>` : ''}`;
-  const c = calcular(it, r);
-  const cor = !c ? '' : c.margem >= 0.15 ? 'pz-bom' : c.margem >= 0 ? 'pz-medio' : 'pz-ruim';
-  return `<div><b>${brl(r.preco_unitario_mediano)}</b>/un no mercado <span class="pz-conf pz-${esc(r.confianca)}">confiança ${esc(r.confianca)}</span></div>
-    ${c ? `<div class="${cor}">Lucro: <b>${brl(c.un)}</b>/un · <b>${brl(c.total)}</b> no total · margem ${(c.margem * 100).toFixed(0)}%</div>` : '<div class="m">Sem valor estimado para comparar.</div>'}
-    <details class="pz-fontes"><summary>${r.fontes?.length || 0} fonte(s)${r.doCache ? ' · pesquisa recente' : ''}</summary>
-      <div class="m">${esc(r.produto_encontrado || '')}</div>
-      <ul>${(r.fontes || []).map(f => `<li><a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.loja)}</a>: ${brl(f.preco)}</li>`).join('')}</ul>
+  const total = r.fontes?.length || 0;
+  const detalhes = `<details class="pz-fontes"><summary>Conferência: ${r.compativeis ?? 0} de ${total} produto(s) atendem a todas as especificações${r.doCache ? ' · pesquisa recente' : ''}</summary>
+      ${r.produto_encontrado ? `<div class="m"><b>Modelo que atende:</b> ${esc(r.produto_encontrado)}</div>` : ''}
+      ${quadro(r)}
+      <ul>${(r.fontes || []).map(fonteHtml).join('')}</ul>
       ${r.observacao ? `<div class="m">${esc(r.observacao)}</div>` : ''}
     </details>`;
+  if (!(r.preco_unitario_mediano > 0)) return `<span class="pz-ruim">Nenhum produto compatível encontrado</span>${detalhes}`;
+  const c = calcular(it, r);
+  const cor = !c ? '' : c.margem >= 0.15 ? 'pz-bom' : c.margem >= 0 ? 'pz-medio' : 'pz-ruim';
+  const aviso = r.base_preco === 'parciais'
+    ? '<div class="pz-medio">⚠️ Nenhum produto confirmou todas as especificações: preço calculado com produtos que não deu para conferir por completo.</div>' : '';
+  return `<div><b>${brl(r.preco_unitario_mediano)}</b>/un no mercado <span class="pz-conf pz-${esc(r.confianca)}">confiança ${esc(r.confianca)}</span></div>
+    ${aviso}
+    ${c ? `<div class="${cor}">Lucro: <b>${brl(c.un)}</b>/un · <b>${brl(c.total)}</b> no total · margem ${(c.margem * 100).toFixed(0)}%</div>` : '<div class="m">Sem valor estimado para comparar.</div>'}
+    ${detalhes}`;
 }
 
 window.addEventListener('itens-carregados', e => {
@@ -95,7 +122,7 @@ window.addEventListener('itens-carregados', e => {
     const botoes = box.querySelectorAll('button');
     botoes.forEach(b => b.disabled = true);
     lote.forEach(num => { const td = tabela.querySelector(`tr[data-n="${num}"] .pz-cel`); if (td && !resultados[num]) td.innerHTML = '<span class="m">⏳ pesquisando…</span>'; });
-    st.textContent = `Pesquisando ${lote.length} item(ns) na internet… leva de 1 a 3 minutos.`;
+    st.textContent = `Pesquisando ${lote.length} item(ns) na internet e conferindo as especificações… leva de 3 a 8 minutos.`;
     try {
       const corpo = {
         contexto: `${pregao.org} · ${pregao.mun}/${pregao.uf}`,
