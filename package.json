@@ -1,0 +1,13 @@
+{
+  "name": "painel-pregoes",
+  "private": true,
+  "type": "module",
+  "description": "Painel de pregões do PNCP: robô de coleta, servidor do Wi-Fi e pesquisa de preços",
+  "scripts": {
+    "sync": "node scripts/sync.mjs",
+    "servidor": "node servidor/server.mjs"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^5.4.296"
+  }
+}

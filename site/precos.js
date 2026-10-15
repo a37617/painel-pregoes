@@ -52,6 +52,8 @@ function celula(it, r) {
   if (!r) return '';
   const total = r.fontes?.length || 0;
   const detalhes = `<details class="pz-fontes"><summary>Conferência: ${r.compativeis ?? 0} de ${total} produto(s) atendem a todas as especificações${r.doCache ? ' · pesquisa recente' : ''}</summary>
+      ${r.usou_anexo ? '<div class="m">📎 Especificações lidas do anexo do edital (termo de referência).</div>' : ''}
+      ${(r.especificacoes_exigidas || []).length ? `<div class="m"><b>Exigências conferidas:</b> ${r.especificacoes_exigidas.map(esc).join(' · ')}</div>` : ''}
       ${r.produto_encontrado ? `<div class="m"><b>Modelo que atende:</b> ${esc(r.produto_encontrado)}</div>` : ''}
       ${quadro(r)}
       <ul>${(r.fontes || []).map(fonteHtml).join('')}</ul>
@@ -127,6 +129,7 @@ window.addEventListener('itens-carregados', e => {
     try {
       const corpo = {
         contexto: `${pregao.org} · ${pregao.mun}/${pregao.uf}`,
+        pregao: { cnpj: pregao.cnpj, ano: pregao.raw.anoCompra, seq: pregao.raw.sequencialCompra },
         itens: lote.map(num => ({ numero: num, descricao: porNumero[num].descricao, unidade: porNumero[num].unidadeMedida })),
       };
       let r = await fetch('api/pesquisa-preco', { method: 'POST', headers: { 'content-type': 'application/json', ...senhaHeader() }, body: JSON.stringify(corpo) });
@@ -137,7 +140,7 @@ window.addEventListener('itens-carregados', e => {
         await new Promise(res => setTimeout(res, 4000));
         r = await fetch('api/pesquisa-preco/' + job.id, { headers: senhaHeader() });
         job = await r.json();
-        st.textContent = job.status === 'na fila' ? 'Na fila, esperando outra pesquisa terminar…' : `Pesquisando na internet… ${Math.round((Date.now() - t0) / 1000)}s`;
+        st.textContent = job.status === 'na fila' ? 'Na fila, esperando outra pesquisa terminar…' : `${job.etapa ? job.etapa[0].toUpperCase() + job.etapa.slice(1) : 'Pesquisando'}… ${Math.round((Date.now() - t0) / 1000)}s`;
       }
       if (job.status === 'erro') throw new Error(job.erro);
       Object.assign(resultados, job.resultado);
