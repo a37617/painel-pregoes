@@ -105,6 +105,7 @@ mark{background:var(--warn-soft);color:inherit;border-radius:2px}
 footer{margin-top:24px;color:var(--muted);font-size:12px}
 footer a{color:var(--accent)}
 </style>
+<link rel="stylesheet" href="agentes.css">
 </head>
 <body>
 <div class="wrap">
@@ -114,6 +115,7 @@ footer a{color:var(--accent)}
       <div class="sub">Todos os pregões com propostas abertas no PNCP, atualizados automaticamente · Lei 14.133/2021</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-primary" id="aiBtn" type="button" title="Perguntar aos agentes de IA sobre os pregões">🤖 Agentes IA</button>
       <a class="btn-ghost extlink" href="extensao.zip" download title="Baixar a extensão do Chrome que avisa quando surge pregão com as suas palavras-chave">⬇ Extensão do Chrome</a>
       <button class="btn-ghost" id="themeBtn" type="button" title="Alternar tema">◐ Tema</button>
     </div>
@@ -462,6 +464,7 @@ async function openDrawer(r){
     <div class="m" style="color:var(--muted);font-size:12px">${esc(x.modalidadeNome)} nº ${esc(x.numeroCompra)} · ${badge(r)}</div>
     <h3>${esc(r.obj)}</h3>
     <div class="links">
+      <button type="button" class="ai-analisar" data-id="${esc(r.id)}">🤖 Analisar com IA</button>
       <a href="${pncpLink(r)}" target="_blank" rel="noopener">Ver no PNCP ↗</a>
       ${x.linkSistemaOrigem ? `<a href="${esc(x.linkSistemaOrigem)}" target="_blank" rel="noopener">Sistema de origem ↗</a>` : ''}
     </div>
@@ -479,6 +482,7 @@ async function openDrawer(r){
     </dl>
     <h2 style="font-size:14px;margin:16px 0 8px">Itens</h2><div id="items" class="m" style="color:var(--muted)">Carregando itens…</div>`;
   $('dclose').onclick = closeDrawer;
+  window.dispatchEvent(new CustomEvent('pregao-aberto', {detail: r.id}));
   d.classList.add('open'); $('dbg').classList.add('open'); d.scrollTop = 0;
   try {
     const items = await getJSON(`${API2}/orgaos/${r.cnpj}/compras/${x.anoCompra}/${x.sequencialCompra}/itens?pagina=1&tamanhoPagina=200`, 2) || [];
@@ -501,8 +505,22 @@ async function openDrawer(r){
   }
 }
 
+// ---------- ponte para os agentes de IA (agentes.js) ----------
+window.painel = {
+  registros: () => ALL,
+  aplicarFiltros(f){
+    ['q','uf','vmin','vmax','prazo','modalidade','srp'].forEach(k => $(k).value = f[k] ?? '');
+    Object.keys(facet).forEach(k => facet[k] = null);
+    render();
+    return VIEW.length;
+  },
+  abrir(id){ const r = ALL.find(x => x.id === id); if (r) openDrawer(r); return !!r; },
+  getJSON, API2, pncpLink,
+};
+
 render();
 loadData();
 </script>
+<script type="module" src="agentes.js"></script>
 </body>
 </html>
