@@ -34,3 +34,7 @@
 #drawer table.items tr.pz-linha .pz-cel>div{margin:2px 0}
 .pz-cel .pz-fontes{max-width:100%}
 .pz-quadro{width:0;min-width:100%}
+/* lote genérico: botão para ler os itens no edital e aviso da lista lida */
+.pz-ler{font:inherit;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--accent);border-radius:6px;padding:4px 10px;margin-top:6px;background:var(--accent);color:var(--panel)}
+.pz-ler:disabled{opacity:.6;cursor:wait}
+.pz-lidos{margin:0 0 8px;padding:8px 10px;border-radius:8px;background:var(--warn-soft);color:var(--ink);font-size:12.5px}

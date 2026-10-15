@@ -9,7 +9,7 @@ import { readFile, writeFile, mkdir, stat, appendFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { criarPesquisa, verPesquisa, pesquisaDisponivel } from './precos.mjs';
+import { criarPesquisa, criarExtracaoItens, verPesquisa, pesquisaDisponivel } from './precos.mjs';
 import { buscarNovos } from './novos.mjs';
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -123,7 +123,7 @@ function bloqueado(ip) {
 async function api(req, res, path) {
   const liberado = ehLocal(req) || senhaOk(req);
   if (path === '/api/status') return json(res, 200, { pesquisa: pesquisaDisponivel(), liberado });
-  if (path.startsWith('/api/pesquisa-preco')) {
+  if (path.startsWith('/api/pesquisa-preco') || path.startsWith('/api/itens-anexo')) {
     const ip = req.socket.remoteAddress;
     if (bloqueado(ip)) return json(res, 429, { erro: 'Muitas senhas erradas. Tente de novo em 15 minutos.' });
     if (!liberado) {
@@ -131,12 +131,13 @@ async function api(req, res, path) {
       return json(res, 401, { erro: 'Senha necessária' });
     }
   }
-  if (path === '/api/pesquisa-preco' && req.method === 'POST') {
+  const criar = { '/api/pesquisa-preco': criarPesquisa, '/api/itens-anexo': criarExtracaoItens }[path];
+  if (criar && req.method === 'POST') {
     let body = '';
     for await (const c of req) { body += c; if (body.length > 200000) return json(res, 413, { erro: 'pedido grande demais' }); }
     let pedido;
     try { pedido = JSON.parse(body); } catch { return json(res, 400, { erro: 'pedido inválido' }); }
-    try { return json(res, 202, criarPesquisa(pedido)); }
+    try { return json(res, 202, criar(pedido)); }
     catch (e) { return json(res, e.code || 500, { erro: e.message }); }
   }
   const m = path.match(/^\/api\/pesquisa-preco\/(\d+)$/);

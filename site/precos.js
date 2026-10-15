@@ -70,12 +70,15 @@ function celula(it, r) {
     ${detalhes}`;
 }
 
+// Alguns órgãos cadastram no PNCP um item só ("proposta para todos os itens", "LOTE 01") e põem a lista real no edital.
+const ehGenerico = it => (it?.descricao || '').length < 160 &&
+  /proposta (para|com) todos|todos os itens|lote (unico|único|global)|valor global|item (unico|único)|^\s*lote\s*(n[ºo°.]*\s*)?\d*\s*$/i.test(it.descricao);
+
 // Serviços e itens julgados por desconto não têm um produto de loja para comparar.
 function semPesquisa(it) {
   if (!it) return '';
   const crit = String(it.criterioJulgamentoNome || '').toLowerCase();
-  // Alguns órgãos cadastram no PNCP um item só ("proposta para todos os itens", "lote único") e põem a lista real no edital.
-  if (/proposta (para|com) todos|todos os itens|lote (unico|único|global)|valor global/i.test(it.descricao || '') && (it.descricao || '').length < 160)
+  if (ehGenerico(it))
     return 'O órgão cadastrou no PNCP só um item genérico. A lista real de produtos e quantidades está no edital ou no termo de referência (botão "Ver no PNCP", aba Arquivos). Use o "Analisar com IA" para resumir o edital.';
   if (crit.includes('desconto')) return `Julgamento por ${esc(it.criterioJulgamentoNome.toLowerCase())}: o lance é um percentual de desconto sobre uma tabela de referência (ex.: tabela de peças da montadora), não um preço por produto. Por isso não dá para calcular lucro pela internet: confira no edital qual tabela vale e quanto de desconto você consegue dar.`;
   if (it.materialOuServico === 'S') return 'Serviço: a pesquisa na internet compara produtos de loja, e serviço depende de mão de obra, deslocamento e escala. Para ter uma referência, veja os vencedores de contratos parecidos no PNCP (o agente "Pesquisa de preços" do chat faz isso).';
@@ -106,8 +109,10 @@ window.addEventListener('itens-carregados', e => {
   tabela.querySelectorAll('tbody tr[data-n]').forEach(tr => {
     tr.classList.add('pz-item');
     const motivo = semPesquisa(porNumero[tr.dataset.n]);
-    tr.insertAdjacentHTML('afterend', `<tr class="pz-linha" data-pz="${tr.dataset.n}"><td></td><td colspan="4" class="pz-cel">${motivo
-      ? `<span class="m">ℹ️ ${motivo}</span>`
+    const generico = ehGenerico(porNumero[tr.dataset.n]);
+    tr.insertAdjacentHTML('afterend', `<tr class="pz-linha" data-pz="${tr.dataset.n}"><td></td><td colspan="4" class="pz-cel">${generico
+      ? '<span class="m">ℹ️ O órgão cadastrou no PNCP só um item genérico; a lista real de produtos está no edital.</span> <button type="button" class="pz-ler" title="A IA lê o edital e o termo de referência e monta a lista de itens">📄 Ler os itens do edital (IA)</button>'
+      : motivo ? `<span class="m">ℹ️ ${motivo}</span>`
       : '<button type="button" class="pz-um" title="Pesquisar o preço deste item na internet">🔎 Pesquisar preço deste item</button>'}</td></tr>`);
   });
   const pesquisaveis = items.filter(it => !semPesquisa(it)).map(it => it.numeroItem);
@@ -176,6 +181,58 @@ window.addEventListener('itens-carregados', e => {
     tabela.querySelectorAll('.pz-um').forEach(b => b.onclick = ev => { ev.stopPropagation(); pesquisar([+b.closest('tr').dataset.pz]); });
   }
   ligarBotoes();
+  tabela.querySelectorAll('.pz-ler').forEach(b => b.onclick = () => lerItensDoEdital(b, porNumero[+b.closest('tr').dataset.pz]));
+
+  // Lote genérico: a IA lê os anexos e devolve a lista real; a tabela é trocada por ela,
+  // e cada item ganha a mesma pesquisa de preço e lucro dos itens normais.
+  async function lerItensDoEdital(botao, itemGenerico) {
+    const cel = botao.closest('.pz-cel');
+    box.querySelectorAll('button').forEach(b => b.disabled = true);
+    botao.disabled = true;
+    st.textContent = 'Lendo o edital e separando os itens… leva de 1 a 4 minutos.';
+    try {
+      let r = await fetch('api/itens-anexo', { method: 'POST', headers: { 'content-type': 'application/json', ...senhaHeader() }, body: JSON.stringify({
+        contexto: `${pregao.org} · ${pregao.mun}/${pregao.uf}`,
+        lote: itemGenerico?.descricao || '',
+        pregao: { cnpj: pregao.cnpj, ano: pregao.raw.anoCompra, seq: pregao.raw.sequencialCompra },
+      }) });
+      let job = await r.json();
+      if (!r.ok) throw new Error(r.status === 401 ? 'digite a senha do servidor (ela aparece na janela do servidor)' : job.erro);
+      const t0 = Date.now();
+      while (job.status !== 'pronto' && job.status !== 'erro') {
+        await new Promise(res => setTimeout(res, 4000));
+        r = await fetch('api/pesquisa-preco/' + job.id, { headers: senhaHeader() });
+        job = await r.json();
+        st.textContent = job.status === 'na fila' ? 'Na fila, esperando outra pesquisa terminar…' : `${job.etapa ? job.etapa[0].toUpperCase() + job.etapa.slice(1) : 'Lendo o edital'}… ${Math.round((Date.now() - t0) / 1000)}s`;
+      }
+      if (job.status === 'erro') throw new Error(job.erro);
+      const lidos = job.resultado?.itens || [];
+      if (!lidos.length) throw new Error('não achei a lista de itens nos anexos publicados no PNCP');
+      const novos = lidos.map((x, i) => ({
+        numeroItem: i + 1,
+        descricao: x.descricao,
+        quantidade: x.quantidade,
+        unidadeMedida: x.unidade,
+        valorUnitarioEstimado: x.valor_unitario_estimado > 0 ? x.valor_unitario_estimado : null,
+        valorTotal: x.valor_unitario_estimado > 0 ? x.valor_unitario_estimado * (x.quantidade || 0) : null,
+        materialOuServico: x.tipo === 'servico' ? 'S' : 'M',
+        materialOuServicoNome: x.tipo === 'servico' ? 'Serviço' : 'Material',
+        rotulo: [x.lote && `Lote ${x.lote}`, x.numero && `item ${x.numero}`].filter(Boolean).join(' · '),
+      }));
+      const qtd = n => (n || 0).toLocaleString('pt-BR');
+      tabela.querySelector('tbody').innerHTML = novos.map(it => `<tr data-n="${it.numeroItem}" data-res="0"><td>${it.numeroItem}</td>
+        <td>${esc(it.descricao.length > 400 ? it.descricao.slice(0, 400) + '…' : it.descricao)}<div class="m">${esc([it.rotulo, it.materialOuServicoNome].filter(Boolean).join(' · '))}</div></td>
+        <td class="num">${qtd(it.quantidade)} ${esc(it.unidadeMedida || '')}</td><td class="num">${brl(it.valorUnitarioEstimado)}</td><td class="num">${brl(it.valorTotal)}</td></tr>`).join('');
+      tabela.closest('.tscroll').insertAdjacentHTML('beforebegin', `<div class="pz-lidos m">📄 ${novos.length} item(ns) lido(s) pela IA ${job.anexos?.length ? `em: ${job.anexos.map(esc).join(', ')}` : 'nos anexos do edital'}${job.doCache ? ' (leitura recente)' : ''}. Confira quantidades e valores no edital antes de dar lance.</div>`);
+      box.remove();
+      window.dispatchEvent(new CustomEvent('itens-carregados', { detail: { r: pregao, items: novos } }));
+    } catch (err) {
+      st.textContent = 'Não deu certo: ' + err.message;
+      box.querySelectorAll('button').forEach(b => b.disabled = false);
+      botao.disabled = false;
+    }
+  }
+
   box.querySelector('.pz-todos').onclick = () => {
     const faltam = pesquisaveis.filter(n => !resultados[n]);
     if (!faltam.length) { st.textContent = pesquisaveis.length ? 'Todos os produtos já foram pesquisados.' : 'Este pregão só tem serviços ou itens por desconto: não há produto para pesquisar.'; return; }

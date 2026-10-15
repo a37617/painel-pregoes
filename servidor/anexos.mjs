@@ -42,6 +42,7 @@ async function baixarPdf(url) {
 function lerAnexos({ cnpj, ano, seq }) {
   const id = `${cnpj}/${ano}/${seq}`;
   if (!textos.has(id)) {
+    if (textos.size >= 30) textos.delete(textos.keys().next().value); // guarda só os pregões abertos por último
     textos.set(id, (async () => {
       const base = `https://pncp.gov.br/api/pncp/v1/orgaos/${cnpj}/compras/${ano}/${seq}/arquivos`;
       const r = await fetch(base, { signal: AbortSignal.timeout(30000) });
@@ -88,6 +89,31 @@ function pontuar(trecho, chaves, tituloDoc) {
   if (/\b(tr|termo|referencia|anexo|especifica|projeto basico)\b/.test(norm(tituloDoc))) p += 40;
   p -= (t.match(/conforme especifica/g) || []).length * 3; // só remete ao anexo, não especifica
   return p;
+}
+
+// Texto dos anexos para achar a lista de itens de um lote genérico ("proposta para todos os itens").
+// Termo de referência primeiro; se passar do limite, ficam os trechos com cara de tabela de itens.
+const SINAL_TABELA = /\b(unid|und|un|pc|pct|cx|kg|lt|litros?|metros?|qtd|quant|quantidade|v\.? ?unit|valor unit|pre[cç]o unit)\b|r\$ ?\d/i;
+export async function textoParaListaDeItens(pregao, limite = 150000) {
+  const anexos = [...await lerAnexos(pregao)]
+    .sort((a, b) => (/\b(tr|termo|referencia|anexo|planilha|orcament)/i.test(norm(b.titulo)) ? 1 : 0) - (/\b(tr|termo|referencia|anexo|planilha|orcament)/i.test(norm(a.titulo)) ? 1 : 0));
+  const tudo = anexos.map(a => `===== ${a.titulo} =====\n${a.texto}`).join('\n');
+  if (tudo.length <= limite) return { texto: tudo, arquivos: anexos.map(a => a.titulo) };
+  // Grande demais: blocos de ~40 linhas, mantendo os que têm mais sinais de tabela de itens, na ordem original.
+  const linhas = tudo.split('\n');
+  const blocos = [];
+  for (let i = 0; i < linhas.length; i += 40) {
+    const txt = linhas.slice(i, i + 40).join('\n');
+    blocos.push({ i, txt, p: txt.split('\n').filter(l => SINAL_TABELA.test(l)).length });
+  }
+  const escolhidos = [];
+  let tam = 0;
+  for (const b of [...blocos].sort((x, y) => y.p - x.p)) {
+    if (!b.p || tam + b.txt.length > limite) continue;
+    escolhidos.push(b); tam += b.txt.length;
+  }
+  escolhidos.sort((x, y) => x.i - y.i);
+  return { texto: escolhidos.map(b => b.txt).join('\n[...]\n'), arquivos: anexos.map(a => a.titulo) };
 }
 
 export function validarPregao(p) {
