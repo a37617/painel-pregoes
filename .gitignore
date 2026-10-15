@@ -1,0 +1,4 @@
+site/data/
+node_modules/
+.claude/
+painel-pregoes.html
