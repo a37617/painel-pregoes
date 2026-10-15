@@ -74,6 +74,9 @@ function celula(it, r) {
 function semPesquisa(it) {
   if (!it) return '';
   const crit = String(it.criterioJulgamentoNome || '').toLowerCase();
+  // Alguns órgãos cadastram no PNCP um item só ("proposta para todos os itens", "lote único") e põem a lista real no edital.
+  if (/proposta (para|com) todos|todos os itens|lote (unico|único|global)|valor global/i.test(it.descricao || '') && (it.descricao || '').length < 160)
+    return 'O órgão cadastrou no PNCP só um item genérico. A lista real de produtos e quantidades está no edital ou no termo de referência (botão "Ver no PNCP", aba Arquivos). Use o "Analisar com IA" para resumir o edital.';
   if (crit.includes('desconto')) return `Julgamento por ${esc(it.criterioJulgamentoNome.toLowerCase())}: o lance é um percentual de desconto sobre uma tabela de referência (ex.: tabela de peças da montadora), não um preço por produto. Por isso não dá para calcular lucro pela internet: confira no edital qual tabela vale e quanto de desconto você consegue dar.`;
   if (it.materialOuServico === 'S') return 'Serviço: a pesquisa na internet compara produtos de loja, e serviço depende de mão de obra, deslocamento e escala. Para ter uma referência, veja os vencedores de contratos parecidos no PNCP (o agente "Pesquisa de preços" do chat faz isso).';
   return '';

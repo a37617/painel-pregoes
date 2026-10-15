@@ -154,7 +154,8 @@ const server = http.createServer(async (req, res) => {
     const body = await readFile(file);
     res.writeHead(200, {
       'content-type': TIPOS[extname(file)] || 'application/octet-stream',
-      'cache-control': path.endsWith('.json') ? 'no-cache' : 'max-age=300',
+      // Código e dados sempre conferidos com o servidor: depois de uma atualização o navegador já pega a versão nova.
+      'cache-control': /\.(json|html|js|css)$/.test(file) ? 'no-cache' : 'max-age=300',
     });
     res.end(body);
   } catch {
