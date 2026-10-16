@@ -9,6 +9,7 @@ import { readFile, writeFile, mkdir, stat, appendFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { criarPesquisa, criarExtracaoItens, verPesquisa, pesquisaDisponivel } from './precos.mjs';
 import { buscarNovos } from './novos.mjs';
 
@@ -36,6 +37,16 @@ for (const nivel of ['log', 'warn']) {
   };
 }
 stat(ARQ_LOG).then(s => { if (s.size > 2e6) return writeFile(ARQ_LOG, ''); }).catch(() => {});
+
+// Erros inesperados vão para o registro com o detalhe. Uma promessa rejeitada não derruba o servidor;
+// um erro grave encerra (o iniciar-servidor.bat religa sozinho em seguida).
+process.on('unhandledRejection', e => console.warn(`[${hora()}] Erro não tratado (o servidor continua): ${e?.stack || e}`));
+process.on('uncaughtException', e => {
+  const msg = `${new Date().toLocaleDateString('pt-BR')} [${hora()}] ERRO GRAVE, servidor vai reiniciar: ${e?.stack || e}\n`;
+  try { writeFileSync(ARQ_LOG, msg, { flag: 'a' }); } catch {}
+  process.stderr.write(msg);
+  process.exit(1);
+});
 
 // Dados = arquivo completo do robô do GitHub (base) + pregões novos que este servidor
 // achou no PNCP depois dele (extras). Os extras ficam salvos para sobreviver a reinícios.
@@ -162,6 +173,14 @@ const server = http.createServer(async (req, res) => {
   } catch {
     res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Não encontrado');
   }
+});
+
+server.on('error', e => {
+  if (e.code === 'EADDRINUSE') {
+    console.warn(`[${hora()}] Já existe um servidor do painel rodando na porta ${PORT}. Este aqui vai fechar.`);
+    process.exit(3); // o iniciar-servidor.bat entende o código 3 e não religa
+  }
+  throw e;
 });
 
 server.listen(PORT, '0.0.0.0', async () => {
