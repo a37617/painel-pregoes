@@ -17,6 +17,26 @@ GitHub Actions (a cada 3h) ──► scripts/sync.mjs baixa o PNCP ──► sit
 - **`.github/workflows/atualizar.yml`**: o agendamento. Para atualizar na hora: aba **Actions** → *Atualizar pregões* → **Run workflow**.
 - **`extensao/`**: a extensão do Chrome.
 
+## Telas do painel
+
+Menu lateral (recolhível) com sino de avisos no topo:
+
+| Tela | O que faz |
+|---|---|
+| 🔎 Busca | Todos os pregões abertos, filtros, gráficos, itens, pesquisa de preço com IA e lucro |
+| 🗂️ Kanban | Licitações acompanhadas da captação ao resultado, por empresa |
+| 📅 Agenda | Encerramentos automáticos, tarefas e compromissos |
+| 📊 Relatórios | Participações, vitórias, perdas, taxa de êxito e PDF |
+| 📑 Pós-licitação | Atas, contratos e empenhos, com entregas, pagamentos, saldo e vigência |
+| ⚖️ Jurídico | Impugnações, esclarecimentos, recursos e contrarrazões com prazo da Lei 14.133 e minuta pronta |
+| 📄 Documentos | Cofre de certidões com vencimento e 17 declarações de habilitação geradas num PDF só |
+| 💲 Pesquisa de Preços | Preços pagos pelo governo (Compras.gov, por código CATMAT/CATSER) e preço de mercado com IA |
+| 🔭 Monitoramento | Órgãos e palavras vigiados e itens ganhos por concorrentes (CNPJ) |
+| 🎯 Lances | Lance mínimo (custo + impostos + margem) e plano de lances; não envia lances sozinho |
+| 🏢 Perfis de empresa | Dados da empresa usados na busca, propostas, declarações e minutas |
+
+O sino junta encerramentos em até 48 h, certidões vencendo, prazos jurídicos, entregas atrasadas, vigências acabando e pregões novos dos órgãos vigiados. Os dados ficam no servidor do Wi-Fi (`servidor/dados/`) ou, no painel online, só no navegador.
+
 ## Instalar a extensão (Chrome ou Edge)
 
 1. Abra `chrome://extensions` (no Edge: `edge://extensions`).

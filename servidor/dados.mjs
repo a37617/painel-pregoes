@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const PASTA = fileURLToPath(new URL('dados/', import.meta.url));
-export const COLECOES = new Set(['perfis', 'kanban', 'agenda', 'relatorios']);
+export const COLECOES = new Set(['perfis', 'kanban', 'agenda', 'relatorios', 'certidoes', 'declaracoes', 'poslicitacao', 'juridico', 'monitoramento', 'lances']);
 const MAX_BYTES = 8 * 1024 * 1024; // logos em base64 cabem folgado
 
 const memoria = new Map(); // nome -> { versao, itens }

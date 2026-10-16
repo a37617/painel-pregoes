@@ -13,6 +13,7 @@ import { writeFileSync } from 'node:fs';
 import { criarPesquisa, criarExtracaoItens, verPesquisa, pesquisaDisponivel } from './precos.mjs';
 import { buscarNovos } from './novos.mjs';
 import { COLECOES, ler as lerColecao, gravar as gravarColecao } from './dados.mjs';
+import { consultarGov } from './gov.mjs';
 
 const PORT = Number(process.env.PORT) || 8080;
 const SITE = fileURLToPath(new URL('../site/', import.meta.url));
@@ -164,6 +165,12 @@ async function api(req, res, path) {
       try { return json(res, 200, await gravarColecao(d[1], JSON.parse(body), body.length)); }
       catch (e) { return json(res, e.code || 400, { erro: e.message, atual: e.atual }); }
     }
+  }
+  // Dados públicos do Compras.gov (preços praticados, itens ganhos por fornecedor).
+  const g = path.match(/^\/api\/gov\/([a-z-]+)$/);
+  if (g && req.method === 'GET') {
+    try { return json(res, 200, await consultarGov(g[1], new URL(req.url, 'http://x').searchParams)); }
+    catch (e) { return json(res, e.code || 502, { erro: e.name === 'TimeoutError' ? 'o Compras.gov demorou demais para responder' : e.message }); }
   }
   return json(res, 404, { erro: 'rota não encontrada' });
 }

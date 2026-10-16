@@ -1,0 +1,86 @@
+/* Fase 3: menu lateral, sino de avisos e telas Documentos, Pós-licitação, Jurídico, Preços, Monitoramento e Lances */
+
+/* menu lateral (telas largas); em telas estreitas continua a barra de abas no topo */
+.av-menu-topo{display:none}
+@media (min-width:1000px){
+  body.com-menu{padding-left:232px;transition:padding .2s}
+  body.com-menu.menu-recolhido{padding-left:72px}
+  body.com-menu .ap-abas{position:fixed;left:0;top:0;bottom:0;width:220px;flex-direction:column;flex-wrap:nowrap;gap:2px;margin:0;padding:12px 10px;border:0;border-right:1px solid var(--line);background:var(--panel);overflow-y:auto;z-index:5;transition:width .2s}
+  body.com-menu .av-menu-topo{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 4px 14px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  .av-marca{font-size:14px;white-space:nowrap;overflow:hidden}
+  .av-recolher{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;width:28px;height:28px;cursor:pointer;flex:0 0 auto}
+  body.com-menu .ap-abas button[data-aba]{text-align:left;border:0;border-left:3px solid transparent;border-radius:8px;padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.com-menu .ap-abas button[data-aba]:hover{background:var(--accent-soft);color:var(--accent)}
+  body.com-menu .ap-abas button.ativa{background:var(--accent-soft);color:var(--accent);border-left-color:var(--accent)}
+  body.com-menu.menu-recolhido .ap-abas{width:60px;padding:12px 6px}
+  body.com-menu.menu-recolhido .av-marca{display:none}
+  body.com-menu .av-ico{display:inline-block;width:22px;text-align:center}
+  body.com-menu.menu-recolhido .ap-abas button[data-aba]{padding:10px 0;text-align:center}
+  body.com-menu.menu-recolhido .av-rot{display:none}
+  body.com-menu.menu-recolhido .av-ico{font-size:18px}
+  body.com-menu.menu-recolhido .ap-abas .ap-cont{display:none}
+}
+@media (max-width:999px){
+  .ap-abas{flex-wrap:nowrap;overflow-x:auto;position:sticky;top:0;background:var(--bg);z-index:4}
+  .ap-abas button{white-space:nowrap}
+}
+
+/* sino */
+.av-sino{position:relative;font-size:16px;padding:6px 10px}
+.av-cont{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:var(--danger);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+.av-cont:empty{display:none}
+.av-painel{position:fixed;top:64px;right:16px;width:min(420px,calc(100vw - 32px));max-height:70vh;overflow-y:auto;padding:12px;z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.av-item{display:block;width:100%;text-align:left;font:inherit;font-size:13px;color:var(--ink);background:none;border:0;border-left:3px solid var(--line);border-radius:6px;padding:8px 10px;margin:4px 0;cursor:pointer}
+.av-item:hover{background:var(--accent-soft)}
+.av-item small{display:block;color:var(--muted);font-size:11.5px}
+.av-hot{border-left-color:var(--danger)}
+.av-soon{border-left-color:var(--warn)}
+.av-novo{border-left-color:var(--accent)}
+
+/* peças comuns */
+.ui-bloco{margin-bottom:14px}
+.ui-bloco h3,.ui-mon h3{margin:0 0 6px;font-size:15px}
+.ui-perfil{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.ui-perfil select,.ui-filtros select,.ui-filtros input,.ui-filtros textarea,.ui-grid2 select,.ui-grid2 input,#lcPlanos,.ui-tabela select{font:inherit;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px}
+.ui-filtros{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin-bottom:12px}
+.ui-filtros label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);min-width:160px}
+.ui-filtros .ap-largo{flex-basis:100%}
+.ui-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 14px;margin:8px 0 12px}
+.ui-grid2 label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.ui-aviso{background:var(--warn-soft);border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:13px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ui-tabela{width:100%;border-collapse:collapse;font-size:13px}
+.ui-tabela th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line)}
+.ui-tabela td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.ui-tabela .num{text-align:right;white-space:nowrap}
+.ui-acoes{white-space:nowrap;text-align:right}
+.ui-acoes .btn-ghost,.ui-acoes a.btn-ghost{font-size:12px;padding:4px 8px;text-decoration:none;color:var(--ink);display:inline-block;margin:2px}
+.ui-sublinha td{border-bottom:0;padding-top:0;padding-bottom:4px}
+.ui-sub{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.ui-sub button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:20px;padding:5px 12px;cursor:pointer}
+.ui-sub button.ativa{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.ui-nota{margin-top:10px}
+.ui-links ul{margin:6px 0;padding-left:18px;columns:2;font-size:13px}
+.ui-links a,.ui-lista a{color:var(--accent)}
+.ui-lista{padding-left:18px;font-size:13px}
+.ui-lista li{margin:4px 0}
+
+/* documentos */
+.ui-decls{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;margin:8px 0 12px}
+.ui-decl{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:9px;cursor:pointer;font-size:13px}
+.ui-decl:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.ui-decl small{display:block;color:var(--muted);font-size:11.5px}
+.ui-decl input{margin-top:3px}
+
+/* monitoramento */
+.ui-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.ui-preg{display:block;padding:7px 0;border-top:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px}
+.ui-preg:hover{color:var(--accent)}
+.ui-preg .m{display:block;font-size:11.5px}
+.ui-conc{margin-top:10px}
+
+/* lances */
+.ui-dupla{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:14px;align-items:start}
+@media (max-width:900px){.ui-dupla{grid-template-columns:1fr}}
+.ui-linha{display:flex;gap:6px}
+.ui-linha input{flex:1;min-width:0}
+.ui-piso td{background:var(--warn-soft);font-weight:600}
