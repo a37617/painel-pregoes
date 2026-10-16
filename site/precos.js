@@ -27,7 +27,7 @@ function calcular(it, r) {
   return { custo, un, total: un * qtd, margem: un / est };
 }
 
-const ICONE = { atende: '✅', nao_atende: '❌', nao_confirmado: '❔' };
+const ICONE = { atende: '<i data-ic="ok"></i>', nao_atende: '<i data-ic="nao"></i>', nao_confirmado: '<i data-ic="duvida"></i>' };
 const SELO = { sim: ['pz-alta', 'atende tudo'], parcial: ['pz-media', 'sem confirmar tudo'], nao: ['pz-ruim-bg', 'não atende'] };
 
 function fonteHtml(f) {
@@ -52,7 +52,7 @@ function celula(it, r) {
   if (!r) return '';
   const total = r.fontes?.length || 0;
   const detalhes = `<details class="pz-fontes"><summary>Conferência: ${r.compativeis ?? 0} de ${total} produto(s) atendem a todas as especificações${r.doCache ? ' · pesquisa recente' : ''}</summary>
-      ${r.usou_anexo ? '<div class="m">📎 Especificações lidas do anexo do edital (termo de referência).</div>' : ''}
+      ${r.usou_anexo ? '<div class="m"><i data-ic="clipe"></i> Especificações lidas do anexo do edital (termo de referência).</div>' : ''}
       ${(r.especificacoes_exigidas || []).length ? `<div class="m"><b>Exigências conferidas:</b> ${r.especificacoes_exigidas.map(esc).join(' · ')}</div>` : ''}
       ${r.produto_encontrado ? `<div class="m"><b>Modelo que atende:</b> ${esc(r.produto_encontrado)}</div>` : ''}
       ${quadro(r)}
@@ -63,7 +63,7 @@ function celula(it, r) {
   const c = calcular(it, r);
   const cor = !c ? '' : c.margem >= 0.15 ? 'pz-bom' : c.margem >= 0 ? 'pz-medio' : 'pz-ruim';
   const aviso = r.base_preco === 'parciais'
-    ? '<div class="pz-medio">⚠️ Nenhum produto confirmou todas as especificações: preço calculado com produtos que não deu para conferir por completo.</div>' : '';
+    ? '<div class="pz-medio"><i data-ic="alerta"></i> Nenhum produto confirmou todas as especificações: preço calculado com produtos que não deu para conferir por completo.</div>' : '';
   return `<div><b>${brl(r.preco_unitario_mediano)}</b>/un no mercado <span class="pz-conf pz-${esc(r.confianca)}">confiança ${esc(r.confianca)}</span></div>
     ${aviso}
     ${c ? `<div class="${cor}">Lucro: <b>${brl(c.un)}</b>/un · <b>${brl(c.total)}</b> no total · margem ${(c.margem * 100).toFixed(0)}%</div>` : '<div class="m">Sem valor estimado para comparar.</div>'}
@@ -95,7 +95,7 @@ window.addEventListener('itens-carregados', e => {
   tabela.closest('.tscroll').before(box);
 
   if (!status) {
-    box.innerHTML = '<span class="m">💡 A pesquisa de preços na internet com IA funciona quando o painel é aberto pelo servidor do Wi-Fi (iniciar-servidor.bat).</span>';
+    box.innerHTML = '<span class="m"><i data-ic="dica"></i> A pesquisa de preços na internet com IA funciona quando o painel é aberto pelo servidor do Wi-Fi (iniciar-servidor.bat).</span>';
     return;
   }
   if (!status.pesquisa?.ok) {
@@ -111,14 +111,14 @@ window.addEventListener('itens-carregados', e => {
     const motivo = semPesquisa(porNumero[tr.dataset.n]);
     const generico = ehGenerico(porNumero[tr.dataset.n]);
     tr.insertAdjacentHTML('afterend', `<tr class="pz-linha" data-pz="${tr.dataset.n}"><td></td><td colspan="4" class="pz-cel">${generico
-      ? '<span class="m">ℹ️ O órgão cadastrou no PNCP só um item genérico; a lista real de produtos está no edital.</span> <button type="button" class="pz-ler" title="A IA lê o edital e o termo de referência e monta a lista de itens">📄 Ler os itens do edital (IA)</button>'
-      : motivo ? `<span class="m">ℹ️ ${motivo}</span>`
-      : '<button type="button" class="pz-um" title="Pesquisar o preço deste item na internet">🔎 Pesquisar preço deste item</button>'}</td></tr>`);
+      ? '<span class="m"><i data-ic="info"></i> O órgão cadastrou no PNCP só um item genérico; a lista real de produtos está no edital.</span> <button type="button" class="pz-ler" title="A IA lê o edital e o termo de referência e monta a lista de itens"><i data-ic="documento"></i> Ler os itens do edital (IA)</button>'
+      : motivo ? `<span class="m"><i data-ic="info"></i> ${motivo}</span>`
+      : '<button type="button" class="pz-um" title="Pesquisar o preço deste item na internet"><i data-ic="busca"></i> Pesquisar preço deste item</button>'}</td></tr>`);
   });
   const pesquisaveis = items.filter(it => !semPesquisa(it)).map(it => it.numeroItem);
 
   box.innerHTML = `
-    <button type="button" class="pz-todos">🔎 Pesquisar preços na internet (IA)</button>
+    <button type="button" class="pz-todos"><i data-ic="busca"></i> Pesquisar preços na internet (IA)</button>
     <label class="pz-extra">Impostos + frete <input type="number" min="0" max="200" step="1" value="${extras()}"> %</label>
     <span class="pz-status m"></span>
     ${status.liberado ? '' : `<label class="pz-senha">Senha do servidor <input type="password" value="${esc(store.get('pregoes.senhaServidor') || '')}" autocomplete="off"></label>`}
@@ -145,8 +145,8 @@ window.addEventListener('itens-carregados', e => {
     const lote = nums.slice(0, status.pesquisa.maxItens);
     const botoes = box.querySelectorAll('button');
     botoes.forEach(b => b.disabled = true);
-    lote.forEach(num => { const td = tabela.querySelector(`tr[data-pz="${num}"] .pz-cel`); if (td && !resultados[num]) td.innerHTML = '<span class="m">⏳ pesquisando…</span>'; });
-    st.textContent = `Pesquisando ${lote.length} item(ns) na internet e conferindo as especificações… leva de 3 a 8 minutos.`;
+    lote.forEach(num => { const td = tabela.querySelector(`tr[data-pz="${num}"] .pz-cel`); if (td && !resultados[num]) td.innerHTML = '<span class="m"><i data-ic="carregando"></i> pesquisando…</span>'; });
+    st.textContent = `Pesquisando ${lote.length} item(ns) na internet e conferindo as especificações… cada item leva de 1 a 3 minutos e aparece assim que fica pronto.`;
     try {
       const corpo = {
         contexto: `${pregao.org} · ${pregao.mun}/${pregao.uf}`,
@@ -161,7 +161,11 @@ window.addEventListener('itens-carregados', e => {
         await new Promise(res => setTimeout(res, 4000));
         r = await fetch('api/pesquisa-preco/' + job.id, { headers: senhaHeader() });
         job = await r.json();
-        st.textContent = job.status === 'na fila' ? 'Na fila, esperando outra pesquisa terminar…' : `${job.etapa ? job.etapa[0].toUpperCase() + job.etapa.slice(1) : 'Pesquisando'}… ${Math.round((Date.now() - t0) / 1000)}s`;
+        // Cada item aparece assim que fica pronto (eles são pesquisados ao mesmo tempo no servidor).
+        if (Object.keys(job.resultado || {}).length) { Object.assign(resultados, job.resultado); redesenhar(); }
+        const prontos = lote.filter(n => resultados[n]).length;
+        st.textContent = job.status === 'na fila' ? 'Na fila, esperando outra pesquisa terminar…'
+          : `${job.etapa ? job.etapa[0].toUpperCase() + job.etapa.slice(1) : 'Pesquisando'}… ${prontos} de ${lote.length} pronto(s) · ${Math.round((Date.now() - t0) / 1000)}s`;
       }
       if (job.status === 'erro') throw new Error(job.erro);
       Object.assign(resultados, job.resultado);
@@ -170,7 +174,7 @@ window.addEventListener('itens-carregados', e => {
       redesenhar();
     } catch (err) {
       st.textContent = 'Não deu certo: ' + err.message;
-      lote.forEach(num => { const td = tabela.querySelector(`tr[data-pz="${num}"] .pz-cel`); if (td && !resultados[num]) td.innerHTML = '<button type="button" class="pz-um">🔎 Tentar de novo</button>'; });
+      lote.forEach(num => { const td = tabela.querySelector(`tr[data-pz="${num}"] .pz-cel`); if (td && !resultados[num]) td.innerHTML = '<button type="button" class="pz-um"><i data-ic="busca"></i> Tentar de novo</button>'; });
     } finally {
       box.querySelectorAll('button').forEach(b => b.disabled = false);
       ligarBotoes();
@@ -223,7 +227,7 @@ window.addEventListener('itens-carregados', e => {
       tabela.querySelector('tbody').innerHTML = novos.map(it => `<tr data-n="${it.numeroItem}" data-res="0"><td>${it.numeroItem}</td>
         <td>${esc(it.descricao.length > 400 ? it.descricao.slice(0, 400) + '…' : it.descricao)}<div class="m">${esc([it.rotulo, it.materialOuServicoNome].filter(Boolean).join(' · '))}</div></td>
         <td class="num">${qtd(it.quantidade)} ${esc(it.unidadeMedida || '')}</td><td class="num">${brl(it.valorUnitarioEstimado)}</td><td class="num">${brl(it.valorTotal)}</td></tr>`).join('');
-      tabela.closest('.tscroll').insertAdjacentHTML('beforebegin', `<div class="pz-lidos m">📄 ${novos.length} item(ns) lido(s) pela IA ${job.anexos?.length ? `em: ${job.anexos.map(esc).join(', ')}` : 'nos anexos do edital'}${job.doCache ? ' (leitura recente)' : ''}. Confira quantidades e valores no edital antes de dar lance.</div>`);
+      tabela.closest('.tscroll').insertAdjacentHTML('beforebegin', `<div class="pz-lidos m"><i data-ic="documento"></i> ${novos.length} item(ns) lido(s) pela IA ${job.anexos?.length ? `em: ${job.anexos.map(esc).join(', ')}` : 'nos anexos do edital'}${job.doCache ? ' (leitura recente)' : ''}. Confira quantidades e valores no edital antes de dar lance.</div>`);
       box.remove();
       window.dispatchEvent(new CustomEvent('itens-carregados', { detail: { r: pregao, items: novos } }));
     } catch (err) {

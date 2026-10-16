@@ -14,8 +14,8 @@ function desenhar() {
   v.innerHTML = `<div class="ap-topo ap-pad-x"><div><h2>Pesquisa de Preços</h2><p class="m">Preços que órgãos públicos pagaram (Compras.gov) e preço atual no mercado (IA).</p></div></div>
     ${temServidor === false ? '<div class="ui-aviso">Esta tela usa o servidor do Wi-Fi para consultar o Compras.gov e a IA. Abra o painel pelo endereço do servidor (iniciar-servidor.bat).</div>' : ''}
     <section class="card ap-pad ui-bloco">
-      <h3>🏛️ Preços praticados em compras públicas</h3>
-      <p class="m">Pelo código do item no catálogo do governo (CATMAT para materiais, CATSER para serviços). Não sabe o código? <a href="https://catalogo.compras.gov.br/cnbs-web/busca" target="_blank" rel="noopener">Procure no Catálogo de Compras ↗</a> ou veja o código nos itens de um pregão.</p>
+      <h3><i data-ic="orgao"></i> Preços praticados em compras públicas</h3>
+      <p class="m">Pelo código do item no catálogo do governo (CATMAT para materiais, CATSER para serviços). Não sabe o código? <a href="https://catalogo.compras.gov.br/cnbs-web/busca" target="_blank" rel="noopener">Procure no Catálogo de Compras <i data-ic="externo"></i></a> ou veja o código nos itens de um pregão.</p>
       <form class="ui-filtros" id="ppGov">
         <label>Tipo<select name="tipo"><option value="material">Material (CATMAT)</option><option value="servico">Serviço (CATSER)</option></select></label>
         <label>Código<input name="codigo" required inputmode="numeric" pattern="\\d+" placeholder="Ex.: 150479" value="${esc(store.get('pregoes.ppCodigo') || '')}"></label>
@@ -25,8 +25,8 @@ function desenhar() {
       <div id="ppGovRes"></div>
     </section>
     <section class="card ap-pad ui-bloco">
-      <h3>🛒 Preço no mercado (IA)</h3>
-      <p class="m">Descreva o produto com as especificações: a IA procura em lojas brasileiras, confere as especificações em cada página e traz os links. Leva de 3 a 8 minutos.</p>
+      <h3><i data-ic="carrinho"></i> Preço no mercado (IA)</h3>
+      <p class="m">Descreva o produto com as especificações: a IA procura em lojas brasileiras, confere as especificações em cada página e traz os links. Leva de 1 a 3 minutos.</p>
       <form class="ui-filtros" id="ppIa">
         <label class="ap-largo">Produto e especificações<textarea name="descricao" rows="3" required placeholder="Ex.: Refletor LED 200W, 6500K, IP66, bivolt"></textarea></label>
         <label>Unidade<input name="unidade" value="Unidade"></label>
@@ -97,7 +97,7 @@ async function buscarIa(e) {
   finally { botao.disabled = false; }
 }
 
-v = registrarAba('pesqprecos', '💲 Pesquisa de Preços', async () => {
+v = registrarAba('pesqprecos', '<i data-ic="preco"></i> Pesquisa de Preços', async () => {
   if (temServidor === null) temServidor = await fetch('api/status').then(r => r.ok).catch(() => false);
   desenhar();
 });

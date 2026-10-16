@@ -14,8 +14,12 @@ const AQUI = fileURLToPath(new URL('.', import.meta.url));
 const PASTA_TRABALHO = join(AQUI, '.pesquisa');
 const CACHE = join(AQUI, 'cache-precos.json');
 const CACHE_DIAS = 7;
-const MAX_ITENS_POR_PESQUISA = 5; // a conferência das especificações abre a página de cada produto: lotes menores
+const MAX_ITENS_POR_PESQUISA = 10; // os itens correm em paralelo (veja SIMULTANEAS)
 const TEMPO_LIMITE_MIN = 25;
+// Sonnet é bem mais rápido que o modelo padrão e dá conta de achar e conferir preços.
+const MODELO = process.env.PESQUISA_MODELO || 'sonnet';
+// Quantos itens pesquisam ao mesmo tempo (cada um é uma sessão do Claude).
+const SIMULTANEAS = Number(process.env.PESQUISA_SIMULTANEAS) || 3;
 const VERSAO = 3; // muda quando o formato da pesquisa muda, para não reaproveitar cache antigo
 
 const CLAUDE = [process.env.CLAUDE_BIN, join(os.homedir(), '.local', 'bin', 'claude.exe'), 'claude']
@@ -100,7 +104,7 @@ Passo 3. Abra a página de cada candidato (WebFetch) e compare, uma a uma, as es
   - "nao_atende": a página mostra um valor diferente ou inferior;
   - "nao_confirmado": a página não informa ou não abriu.
   Em "detalhe", escreva o que a página diz (ex.: "página informa 430 g"). Se a página não abriu, marque verificado_na_pagina = false e use o que a busca mostrou.
-Passo 4. Continue procurando até ter pelo menos 3 lojas diferentes com produtos que atendam a todas as exigências, ou até esgotar as opções razoáveis (umas 8 páginas por item). Inclua também os candidatos que falharam em alguma exigência, para mostrar o que foi descartado.
+Passo 4. Continue procurando até ter pelo menos 3 lojas diferentes com produtos que atendam a todas as exigências, e então pare; ou até esgotar as opções razoáveis (no máximo umas 5 páginas abertas por item). Inclua também os candidatos que falharam em alguma exigência, para mostrar o que foi descartado.
 Regras gerais:
 - Preço à vista por UNIDADE da licitação (se a loja vende em caixa ou pacote, converta para a unidade pedida).
 - Em "produto", o nome do produto como aparece na loja (marca e modelo).
@@ -142,7 +146,7 @@ function rodarClaude(prompt, { schema = SCHEMA, sistema = REGRAS, ferramentas = 
   return new Promise((resolve, reject) => {
     // Agente restrito: só existem as ferramentas pedidas (busca e leitura de páginas da web, ou nenhuma).
     // Nada de arquivos, terminal, skills ou servidores MCP.
-    const args = ['-p', '--output-format', 'json', '--json-schema', JSON.stringify(schema),
+    const args = ['-p', '--model', MODELO, '--output-format', 'json', '--json-schema', JSON.stringify(schema),
       '--append-system-prompt', sistema,
       '--strict-mcp-config',
       ...(ferramentas.length ? ['--tools', ...ferramentas, '--allowedTools', ...ferramentas] : ['--tools', ''])];
@@ -167,7 +171,16 @@ function rodarClaude(prompt, { schema = SCHEMA, sistema = REGRAS, ferramentas = 
   });
 }
 
-// Fila: uma pesquisa por vez, para não estourar o limite do plano do Claude.
+// Limite de sessões do Claude rodando ao mesmo tempo (vale para todas as pesquisas juntas).
+let rodando = 0; const esperando = [];
+function vez(tarefa) {
+  return new Promise((ok, falha) => {
+    const iniciar = () => { rodando++; tarefa().then(ok, falha).finally(() => { rodando--; esperando.shift()?.(); }); };
+    rodando < SIMULTANEAS ? iniciar() : esperando.push(iniciar);
+  });
+}
+
+// Fila: uma pesquisa por vez (os itens dela correm em paralelo), para não estourar o limite do plano do Claude.
 const jobs = new Map();
 let fila = Promise.resolve();
 let seq = 0;
@@ -203,17 +216,24 @@ export function criarPesquisa({ itens = [], contexto = '', pregao = null }) {
       }
       if (faltam.length) {
         job.etapa = 'pesquisando na internet';
+        job.pendentes = faltam.map(it => it.numero);
         await mkdir(PASTA_TRABALHO, { recursive: true });
-        const achados = await rodarClaude(montarPrompt(faltam, String(contexto).slice(0, 200)));
-        for (const r of achados) {
-          const it = faltam.find(x => x.numero === r.numero);
-          if (!it) continue;
-          avaliar(r);
-          r.usou_anexo = !!it.anexo;
-          job.resultado[r.numero] = r;
-          if (r.preco_unitario_mediano > 0) cache[chave(it)] = { em: Date.now(), r };
-        }
-        salvarCache();
+        // Um item por sessão, vários ao mesmo tempo: o resultado de cada um aparece assim que fica pronto.
+        await Promise.all(faltam.map(it => vez(async () => {
+          try {
+            const [r] = await rodarClaude(montarPrompt([it], String(contexto).slice(0, 200)));
+            if (!r) throw new Error('a pesquisa não trouxe este item');
+            r.numero = it.numero;
+            avaliar(r);
+            r.usou_anexo = !!it.anexo;
+            job.resultado[it.numero] = r;
+            if (r.preco_unitario_mediano > 0) { cache[chave(it)] = { em: Date.now(), r }; salvarCache(); }
+          } catch (e) {
+            job.resultado[it.numero] = { numero: it.numero, preco_unitario_mediano: 0, fontes: [], erro: true, observacao: 'Não consegui pesquisar este item: ' + e.message };
+            console.warn(`[pesquisa ${id}] item ${it.numero}: ${e.message}`);
+          }
+          job.pendentes = job.pendentes.filter(n => n !== it.numero);
+        })));
       }
       job.status = 'pronto';
     } catch (e) {
