@@ -202,12 +202,14 @@ server.on('error', e => {
   throw e;
 });
 
-server.listen(PORT, '0.0.0.0', async () => {
+// "::" escuta em IPv4 e IPv6: pelo nome do computador o Windows costuma tentar IPv6 primeiro.
+server.listen(PORT, '::', async () => {
   const ips = Object.values(os.networkInterfaces()).flat()
     .filter(i => i && i.family === 'IPv4' && !i.internal && !i.address.startsWith('169.254'))
     .map(i => i.address);
   console.log('Painel de Pregões no ar. Abra em qualquer aparelho do Wi-Fi:');
-  ips.forEach(ip => console.log(`   http://${ip}:${PORT}`));
+  console.log(`   http://${os.hostname()}:${PORT}   (pelo nome: não muda quando o roteador troca o IP)`);
+  ips.forEach(ip => console.log(`   http://${ip}:${PORT}   (IP de agora)`));
   console.log(`   (neste computador: http://localhost:${PORT})`);
   console.log(`Senha da pesquisa de preços em outros aparelhos: ${SENHA}  (está em servidor\\senha.txt)`);
   console.log('Deixe esta janela aberta. Para parar, feche-a ou aperte Ctrl+C.\n');

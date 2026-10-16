@@ -7,7 +7,7 @@ import { slim, sleep } from '../scripts/pncp.mjs';
 const API = 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao';
 const MODALIDADES = [6, 7];
 const MAX_PAGINAS = 60;
-const PAUSA_MS = 1500;
+const PAUSA_MS = 3000; // com 1,5 s o PNCP ainda bloqueava depois de umas 6 páginas
 
 // Data local (o PNCP filtra por dia de publicação no horário de Brasília).
 const dia = d => { const x = new Date(d - d.getTimezoneOffset() * 6e4); return x.toISOString().slice(0, 10).replace(/-/g, ''); };
