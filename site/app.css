@@ -68,3 +68,55 @@
 .it-tab tr.it-off td:not(:first-child){opacity:.45}
 .it-tab tfoot td{font-weight:700;text-align:right}
 .it-total,.it-soma{white-space:nowrap;text-align:right}
+
+/* agenda */
+.ag-rapido{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+.ag-rapido span{font-size:13px;font-weight:600;color:var(--accent)}
+.ag-rapido input{flex:1;min-width:220px;font:inherit;font-size:13px;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink)}
+.ag-boletim{font-size:12.5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
+.ag-bol-item{border-left:3px solid var(--cor);padding:1px 6px;background:var(--bg);border-radius:4px}
+.ag-barra{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin-bottom:10px}
+.ag-barra select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink)}
+.ag-mes{font-size:16px;text-transform:capitalize;margin:0 6px}
+.ag-modos{display:inline-flex;gap:2px}
+.ag-modos .ativo{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+.ag-tipos{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px}
+.ag-tipos label{display:flex;align-items:center;gap:4px;border-left:3px solid var(--cor);padding-left:5px}
+.ag-grade{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ag-sem{font-size:11px;font-weight:600;color:var(--muted);padding:6px;border-bottom:1px solid var(--line);background:var(--bg)}
+.ag-dia{min-height:96px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ag-dia.fora{background:var(--bg);opacity:.6}
+.ag-dia.hoje .ag-num span{background:var(--accent);color:var(--panel);border-radius:6px;padding:0 6px}
+.ag-num{display:flex;justify-content:space-between;font-size:12px;font-weight:600}
+.ag-mais{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 4px;opacity:0}
+.ag-dia:hover .ag-mais{opacity:1}
+.ag-ev{display:block;width:100%;text-align:left;font:inherit;font-size:11px;border:0;border-left:3px solid var(--cor);background:var(--bg);color:var(--ink);border-radius:3px;padding:2px 4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ag-ev.feito{text-decoration:line-through;opacity:.6}
+.ag-ver{border:0;background:none;color:var(--accent);font-size:11px;cursor:pointer;text-align:left;padding:0}
+.ag-legenda{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;margin-top:8px}
+.ag-legenda span[style]{border-left:3px solid var(--cor);padding-left:5px}
+.ag-lista-dia h3{font-size:13px;text-transform:capitalize;margin:14px 0 6px}
+.ag-lista-ev{margin:0 0 6px}
+.ag-lista-ev .ag-ev{white-space:normal;font-size:12.5px;padding:5px 8px}
+@media (max-width:640px){.ag-dia{min-height:64px}.ag-ev{font-size:10px}}
+
+/* relatórios */
+.rel-filtros{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:12px}
+.rel-filtros label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.rel-filtros input,.rel-filtros select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink)}
+.rel-atalhos{display:flex;gap:4px}
+.rel-kpis .kpi .v{font-size:20px}
+.rel-bloco{margin-bottom:12px}
+.rel-bloco h2{font-size:14px;margin:0 0 8px}
+.rel-bloco textarea{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);margin-bottom:6px}
+.rel-cab-impressao,.rel-coment-imp{display:none}
+@media print{
+  body.imprimindo-relatorio *{visibility:hidden}
+  body.imprimindo-relatorio #ap-relatorios,body.imprimindo-relatorio #ap-relatorios *{visibility:visible}
+  body.imprimindo-relatorio #ap-relatorios{position:absolute;left:0;top:0;width:100%}
+  body.imprimindo-relatorio .rel-nao-imprime{display:none!important}
+  body.imprimindo-relatorio .rel-cab-impressao{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+  body.imprimindo-relatorio .rel-cab-impressao img{max-height:50px}
+  body.imprimindo-relatorio .rel-coment-imp{display:block}
+  body.imprimindo-relatorio .card{box-shadow:none;break-inside:avoid}
+}

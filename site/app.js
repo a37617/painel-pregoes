@@ -19,7 +19,9 @@ export const COLUNAS = [
   { id: 'desistiu', nome: 'Desistiu', cor: '#9ca3af' },
 ];
 
-let perfis = [], kanban = [], aba = store.get('pregoes.aba') || 'busca';
+let perfis = [], kanban = [], aba = store.get('pregoes.aba') || 'busca', dadosProntos = false;
+export const estado = { get perfis() { return perfis; }, get kanban() { return kanban; } };
+export const dadosCarregados = () => dadosProntos;
 
 // ---------- perfil ativo (vale para a busca, os itens e a proposta) ----------
 export const termosDe = p => (p?.termos || '').split(/\n|,/).map(t => t.trim()).filter(Boolean);
@@ -60,6 +62,19 @@ function desenharSeletor() {
 }
 
 // ---------- abas ----------
+// Outras telas (agenda.js, relatorios.js) se registram aqui: ganham botão na barra e uma seção própria.
+const telas = { kanban: () => desenharKanban(), perfis: () => desenharPerfis() };
+export function registrarAba(idAba, rotulo, desenhar, antesDe = 'perfis') {
+  telas[idAba] = desenhar;
+  const nav = $('.ap-abas');
+  const b = document.createElement('button'); b.dataset.aba = idAba; b.innerHTML = rotulo; b.onclick = () => irPara(idAba);
+  const ref = nav.querySelector(`[data-aba="${antesDe}"]`); ref ? ref.before(b) : nav.append(b);
+  const v = document.createElement('section'); v.id = 'ap-' + idAba; v.className = 'ap-view'; v.hidden = aba !== idAba;
+  nav.after(v);
+  if (aba === idAba && dadosProntos) desenhar();
+  return v;
+}
+
 function montarAbas() {
   const header = $('header.top');
   const nav = document.createElement('nav');
@@ -73,17 +88,16 @@ function montarAbas() {
 }
 
 function irPara(a) {
+  if (a !== 'busca' && !telas[a]) a = 'busca';
   aba = a; store.set('pregoes.aba', a);
   document.querySelectorAll('.ap-abas button').forEach(b => b.classList.toggle('ativa', b.dataset.aba === a));
   // Na aba Busca aparece o painel de sempre; nas outras, só a tela da aba.
+  const secao = { kanban: 'apKanban', perfis: 'apPerfis' }[a] || 'ap-' + a;
   [...document.querySelectorAll('.wrap > *')].forEach(el => {
     if (el.matches('header.top, .ap-abas')) return;
-    if (el.id === 'apKanban') el.hidden = a !== 'kanban';
-    else if (el.id === 'apPerfis') el.hidden = a !== 'perfis';
-    else el.hidden = a !== 'busca';
+    el.hidden = el.classList.contains('ap-view') ? el.id !== secao : a !== 'busca';
   });
-  if (a === 'kanban') desenharKanban();
-  if (a === 'perfis') desenharPerfis();
+  telas[a]?.();
   window.scrollTo(0, 0);
 }
 window.irParaAba = irPara;
@@ -370,11 +384,13 @@ async function iniciar() {
   }
   try { perfis = await carregar('perfis'); kanban = await carregar('kanban'); }
   catch (e) { if (e.message === 'senha') console.warn('Perfis e Kanban precisam da senha do servidor.'); else console.warn(e); }
+  dadosProntos = true;
   aplicarPerfil(); contarKanban(); irPara(aba);
+  window.dispatchEvent(new CustomEvent('dados-prontos'));
   // Outro aparelho pode ter mexido: recarrega quando a aba volta a ficar visível.
   document.addEventListener('visibilitychange', async () => {
     if (document.hidden) return;
-    try { perfis = await carregar('perfis'); kanban = await carregar('kanban'); aplicarPerfil(); contarKanban(); if (aba === 'kanban') desenharKanban(); } catch {}
+    try { perfis = await carregar('perfis'); kanban = await carregar('kanban'); aplicarPerfil(); contarKanban(); telas[aba]?.(); } catch {}
   });
 }
 iniciar();
