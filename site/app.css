@@ -1,0 +1,70 @@
+/* Abas, perfis de empresa, Kanban (app.js) e itens/proposta (itens.js) */
+.ap-abas{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 14px;border-bottom:1px solid var(--line)}
+.ap-abas button{font:inherit;font-weight:600;font-size:14px;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;cursor:pointer;border-radius:0}
+.ap-abas button.ativa{color:var(--accent);border-bottom-color:var(--accent)}
+.ap-cont{display:inline-block;min-width:18px;font-size:11px;background:var(--accent);color:var(--panel);border-radius:9px;padding:0 5px;margin-left:2px}
+.ap-cont:empty{display:none}
+.ap-view[hidden],.wrap > [hidden]{display:none !important}
+.ap-pad{padding:16px}
+.ap-pad-x{padding:0 2px 10px}
+.ap-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.ap-topo h2{margin:0;font-size:18px}
+.ap-topo p{margin:4px 0 0}
+.ap-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ap-perigo{color:var(--danger)}
+#apPerfilBox select{border-color:var(--accent)}
+
+/* perfis */
+.ap-perfis{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.ap-perfil-card{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px;flex-wrap:wrap}
+.ap-perfil-card img,.ap-logo-vazio{width:52px;height:52px;object-fit:contain;border-radius:8px;background:var(--bg);display:grid;place-items:center;font-size:24px}
+.ap-perfil-info{flex:1;min-width:160px}
+.ap-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 14px}
+.ap-form>.ap-topo,.ap-form>.ap-rodape,.ap-form fieldset{grid-column:1/-1}
+.ap-form fieldset{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 14px;margin:0}
+.ap-form legend{font-weight:600;font-size:13px;padding:0 6px}
+.ap-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:500}
+.ap-form input,.ap-form select,.ap-form textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:7px 9px}
+.ap-largo{grid-column:1/-1}
+.ap-rot{font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:4px}
+.ap-ufs{display:flex;flex-wrap:wrap;gap:4px 10px}
+.ap-form .ap-chk{flex-direction:row;align-items:center;gap:4px;color:var(--ink);font-size:13px;display:inline-flex;margin-right:10px}
+.ap-logo-prev img{max-height:60px;max-width:220px;vertical-align:middle;margin-top:4px}
+.ap-rodape{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+
+/* kanban */
+.ap-board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,1fr);gap:10px;overflow-x:auto;padding-bottom:10px;align-items:start}
+.ap-col{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-height:200px;display:flex;flex-direction:column}
+.ap-col.sobre{outline:2px dashed var(--accent);outline-offset:-2px}
+.ap-col-topo{display:flex;justify-content:space-between;gap:6px;padding:10px;border-bottom:3px solid var(--cor);font-size:13px}
+.ap-col-topo span{color:var(--muted);font-size:12px;white-space:nowrap}
+.ap-col-cards{padding:8px;display:flex;flex-direction:column;gap:8px;flex:1}
+.ap-vazio{color:var(--muted);text-align:center;padding:12px;font-size:12px}
+.ap-card{border:1px solid var(--line);border-radius:8px;padding:9px;background:var(--bg);cursor:grab;font-size:12.5px}
+.ap-card.arrastando{opacity:.5}
+.ap-card-obj{font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px}
+.ap-card-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:12px}
+.ap-tag{font-size:10.5px;background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:1px 6px}
+.ap-card-nota{font-size:11.5px;color:var(--muted);margin:4px 0}
+.ap-card-acoes{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.ap-card-acoes select{font:inherit;font-size:11.5px;padding:3px 4px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);flex:1;min-width:0}
+.ap-card-acoes button{font-size:11.5px;padding:3px 7px}
+.ap-dialog{border:1px solid var(--line);border-radius:12px;padding:18px;max-width:min(760px,96vw);width:100%;background:var(--panel);color:var(--ink)}
+.ap-dialog::backdrop{background:rgba(0,0,0,.4)}
+.ap-btn-kanban{font:inherit;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:7px;padding:6px 10px}
+
+/* itens e proposta */
+.it-barra{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:0 0 10px}
+.it-busca{flex:1;min-width:200px;font:inherit;font-size:13px;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink)}
+.it-chk{display:flex;flex-direction:row;align-items:center;gap:6px;font-size:12.5px;color:var(--ink)}
+.it-proposta{font-size:13px}
+.it-dialog{max-width:min(1100px,98vw)}
+.it-tabela-wrap{overflow:auto;max-height:46vh;border:1px solid var(--line);border-radius:8px}
+.it-tab{width:100%;border-collapse:collapse;font-size:12px}
+.it-tab th,.it-tab td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.it-tab th{position:sticky;top:0;background:var(--panel);font-size:11.5px;color:var(--muted)}
+.it-tab input:not([type=checkbox]){width:100%;min-width:70px;font:inherit;font-size:12px;padding:4px 6px}
+.it-tab .it-desc{max-width:300px;min-width:200px}
+.it-tab tr.it-off td:not(:first-child){opacity:.45}
+.it-tab tfoot td{font-weight:700;text-align:right}
+.it-total,.it-soma{white-space:nowrap;text-align:right}

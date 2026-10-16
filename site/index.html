@@ -107,6 +107,7 @@ footer a{color:var(--accent)}
 </style>
 <link rel="stylesheet" href="agentes.css">
 <link rel="stylesheet" href="precos.css">
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
 <div class="wrap">
@@ -337,7 +338,8 @@ function applyFilters(){
     (srp === '' || r.srp === (srp === '1')) &&
     (!facet.uf || r.uf === facet.uf) &&
     (!facet.mun || r.mun === facet.mun) &&
-    (!facet.org || r.org === facet.org));
+    (!facet.org || r.org === facet.org) &&
+    (!window.filtroPerfil || window.filtroPerfil(r))); // perfil de empresa ativo (app.js)
 }
 
 function render(){
@@ -522,6 +524,7 @@ window.painel = {
     return VIEW.length;
   },
   abrir(id){ const r = ALL.find(x => x.id === id); if (r) openDrawer(r); return !!r; },
+  render: () => { if (ALL.length) render(); },
   getJSON, API2, pncpLink,
 };
 
@@ -530,5 +533,7 @@ loadData();
 </script>
 <script type="module" src="agentes.js"></script>
 <script type="module" src="precos.js"></script>
+<script type="module" src="app.js"></script>
+<script type="module" src="itens.js"></script>
 </body>
 </html>

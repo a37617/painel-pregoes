@@ -12,6 +12,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { criarPesquisa, criarExtracaoItens, verPesquisa, pesquisaDisponivel } from './precos.mjs';
 import { buscarNovos } from './novos.mjs';
+import { COLECOES, ler as lerColecao, gravar as gravarColecao } from './dados.mjs';
 
 const PORT = Number(process.env.PORT) || 8080;
 const SITE = fileURLToPath(new URL('../site/', import.meta.url));
@@ -134,7 +135,7 @@ function bloqueado(ip) {
 async function api(req, res, path) {
   const liberado = ehLocal(req) || senhaOk(req);
   if (path === '/api/status') return json(res, 200, { pesquisa: pesquisaDisponivel(), liberado });
-  if (path.startsWith('/api/pesquisa-preco') || path.startsWith('/api/itens-anexo')) {
+  if (path.startsWith('/api/pesquisa-preco') || path.startsWith('/api/itens-anexo') || path.startsWith('/api/dados/')) {
     const ip = req.socket.remoteAddress;
     if (bloqueado(ip)) return json(res, 429, { erro: 'Muitas senhas erradas. Tente de novo em 15 minutos.' });
     if (!liberado) {
@@ -153,6 +154,17 @@ async function api(req, res, path) {
   }
   const m = path.match(/^\/api\/pesquisa-preco\/(\d+)$/);
   if (m) { const j = verPesquisa(m[1]); return j ? json(res, 200, j) : json(res, 404, { erro: 'pesquisa não encontrada' }); }
+  // Perfis de empresa e Kanban (mesma regra de acesso: este computador ou senha do servidor).
+  const d = path.match(/^\/api\/dados\/([a-z]+)$/);
+  if (d && COLECOES.has(d[1])) {
+    if (req.method === 'GET') return json(res, 200, await lerColecao(d[1]));
+    if (req.method === 'PUT') {
+      let body = '';
+      for await (const c of req) { body += c; if (body.length > 9e6) return json(res, 413, { erro: 'dados grandes demais' }); }
+      try { return json(res, 200, await gravarColecao(d[1], JSON.parse(body), body.length)); }
+      catch (e) { return json(res, e.code || 400, { erro: e.message, atual: e.atual }); }
+    }
+  }
   return json(res, 404, { erro: 'rota não encontrada' });
 }
 
