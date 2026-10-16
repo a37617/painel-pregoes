@@ -120,7 +120,13 @@ if (!SENHA) {
   SENHA = randomBytes(9).toString('base64url');
   await writeFile(ARQ_SENHA, SENHA + '\n');
 }
-const ehLocal = req => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+// Este computador e os aparelhos do mesmo Wi-Fi (endereços de rede privada) não precisam de senha.
+// A senha só vale para acessos de fora da rede, caso o servidor um dia fique exposto na internet.
+function ehLocal(req) {
+  const ip = String(req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+  return ip === '::1' || /^127\./.test(ip) || /^10\./.test(ip) || /^192\.168\./.test(ip) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip) || /^169\.254\./.test(ip) || /^f[cd]/i.test(ip) || /^fe80:/i.test(ip);
+}
 function senhaOk(req) {
   const a = Buffer.from(String(req.headers['x-senha'] || ''));
   const b = Buffer.from(SENHA);
