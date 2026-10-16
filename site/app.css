@@ -120,3 +120,13 @@
   body.imprimindo-relatorio .rel-coment-imp{display:block}
   body.imprimindo-relatorio .card{box-shadow:none;break-inside:avoid}
 }
+
+/* proposta: preenchimento de valores e pré-visualização */
+.it-preencher{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px;background:var(--accent-soft);border-radius:8px;padding:8px 10px}
+.it-preencher select,.it-preencher input{font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+.it-preencher .it-pct{width:64px}
+.it-margem{display:flex !important;flex-direction:row !important;align-items:center;gap:4px}
+.it-prev{max-width:min(980px,98vw);height:92vh;display:flex;flex-direction:column}
+.it-prev[open]{display:flex}
+.it-prev-doc{flex:1;overflow:auto;background:#8a8f94;border-radius:8px;padding:10px}
+.it-prev-doc .docx-wrapper{background:transparent;padding:0}

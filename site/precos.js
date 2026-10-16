@@ -104,6 +104,7 @@ window.addEventListener('itens-carregados', e => {
   }
 
   const resultados = {};
+  window.precosDoPregao = { id: pregao.id, resultados }; // a proposta em Word (itens.js) usa estes preços
   const porNumero = Object.fromEntries(items.map(it => [it.numeroItem, it]));
   // O resultado vai numa linha própria logo abaixo de cada item, na largura toda (não corta no painel lateral).
   tabela.querySelectorAll('tbody tr[data-n]').forEach(tr => {

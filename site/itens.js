@@ -40,7 +40,7 @@ window.addEventListener('itens-carregados', e => {
     <input type="search" class="it-busca" placeholder="Pesquisar nos itens desta licitação">
     ${termos.length ? `<label class="it-chk"><input type="checkbox" class="it-meus" ${qtdBate ? 'checked' : ''}> Só itens com os termos ${origem} (${qtdBate})</label>` : ''}
     <span class="m it-cont"></span>
-    <button type="button" class="btn-primary it-proposta">📄 Gerar proposta (Word)</button>`;
+    <button type="button" class="btn-primary it-proposta"><i data-ic="documento"></i> Gerar proposta (Word)</button>`;
   tabela.closest('.tscroll').before(barra);
 
   function filtrar() {
@@ -74,6 +74,9 @@ window.addEventListener('itens-carregados', e => {
 });
 
 // ---------- proposta em Word ----------
+const lerExtras = () => { try { const v = parseFloat(localStorage.getItem('pregoes.custosExtras')); return isNaN(v) ? 15 : v; } catch { return 15; } };
+const lerMargem = () => { try { const v = parseFloat(localStorage.getItem('pregoes.margemProposta')); return isNaN(v) ? 20 : v; } catch { return 20; } };
+
 async function lerPerfis() {
   try { const { carregar } = await import('./loja.js'); return await carregar('perfis'); } catch { return []; }
 }
@@ -85,9 +88,16 @@ async function abrirProposta(pregao, todos, visiveis) {
   const dlg = document.createElement('dialog');
   dlg.className = 'ap-dialog it-dialog';
   dlg.innerHTML = `<form class="ap-form">
-    <div class="ap-topo"><div><h2>Proposta comercial</h2><p class="m">${esc(pregao.obj.slice(0, 160))}</p></div><button type="button" class="btn-ghost it-fechar">Fechar ✕</button></div>
+    <div class="ap-topo"><div><h2>Proposta comercial</h2><p class="m">${esc(pregao.obj.slice(0, 160))}</p></div><button type="button" class="btn-ghost it-fechar">Fechar <i data-ic="fechar"></i></button></div>
     <label class="ap-largo">Empresa (perfil com os dados que vão na proposta)
       <select name="perfil">${perfis.length ? perfis.map(p => `<option value="${esc(p.id)}" ${p.id === ativo?.id ? 'selected' : ''}>${esc(p.nome)}${p.razao ? '' : ' (sem dados da empresa)'}</option>`).join('') : '<option value="">Nenhum perfil: crie um na aba Perfis de empresa</option>'}</select></label>
+    <div class="ap-largo it-preencher">
+      <span>Preencher o valor unitário com:</span>
+      <select class="it-base"><option value="auto">Preço de mercado pesquisado + margem (ou o estimado do órgão, se não pesquisou)</option><option value="mercado">Só preço de mercado pesquisado + margem</option><option value="orgao">Valor estimado do órgão</option></select>
+      <label class="it-margem">Margem <input type="number" class="it-pct" min="0" max="500" step="1" value="${esc(lerMargem())}"> %</label>
+      <button type="button" class="btn-ghost it-aplicar">Aplicar</button>
+      <span class="m">Mercado + impostos/frete (${esc(String(lerExtras()))}%) + margem. Confira cada valor antes de enviar.</span>
+    </div>
     <div class="ap-largo it-tabela-wrap"><table class="it-tab"><thead><tr><th><input type="checkbox" class="it-todos" checked title="Marcar todos"></th><th>#</th><th>Descrição</th><th>Qtd.</th><th>Ref. unit.</th><th>Marca</th><th>Modelo</th><th>Valor unit. (R$)</th><th>Total</th></tr></thead>
       <tbody>${todos.map(it => `<tr data-n="${it.numeroItem}" ${marcados.has(it.numeroItem) ? '' : 'class="it-off"'}>
         <td><input type="checkbox" class="it-sel" ${marcados.has(it.numeroItem) ? 'checked' : ''}></td><td>${it.numeroItem}</td>
@@ -100,7 +110,7 @@ async function abrirProposta(pregao, todos, visiveis) {
     <label>Condições de pagamento<input name="pagamento" value="${esc(ativo?.pagamento || 'Conforme edital')}"></label>
     <label>Local<input name="local" value="${esc(ativo?.cidade ? `${ativo.cidade}${ativo.uf ? '/' + ativo.uf : ''}` : '')}"></label>
     <label class="ap-largo">Observações (opcional)<textarea name="obs" rows="2"></textarea></label>
-    <div class="ap-rodape"><span class="m it-msg">Itens marcados sem valor saem em branco para você preencher no Word.</span><button class="btn-primary" type="submit">⬇ Baixar proposta (.docx)</button></div>
+    <div class="ap-rodape"><span class="m it-msg">Itens marcados sem valor saem em branco para você preencher no Word.</span><span class="ap-acoes"><button type="button" class="btn-ghost it-ver"><i data-ic="olho"></i> Pré-visualizar</button><button class="btn-primary" type="submit"><i data-ic="baixar"></i> Baixar proposta (.docx)</button></span></div>
   </form>`;
   document.body.append(dlg);
   dlg.showModal();
@@ -117,26 +127,56 @@ async function abrirProposta(pregao, todos, visiveis) {
     });
     dlg.querySelector('.it-soma').textContent = brl(soma);
   };
+  // Preenche valor (e modelo, se a pesquisa achou) a partir da pesquisa de preços ou do estimado do órgão.
+  const pesquisas = window.precosDoPregao?.id === pregao.id ? window.precosDoPregao.resultados : {};
+  const preencher = () => {
+    const base = dlg.querySelector('.it-base').value;
+    const margem = parseFloat(dlg.querySelector('.it-pct').value) || 0;
+    try { localStorage.setItem('pregoes.margemProposta', String(margem)); } catch {}
+    const fator = (1 + lerExtras() / 100) * (1 + margem / 100);
+    dlg.querySelectorAll('tbody tr').forEach(tr => {
+      const it = todos.find(x => String(x.numeroItem) === tr.dataset.n);
+      const r = pesquisas[it.numeroItem];
+      const mercado = r?.preco_unitario_mediano > 0 ? r.preco_unitario_mediano * fator : null;
+      const v = base === 'orgao' ? it.valorUnitarioEstimado : base === 'mercado' ? mercado : (mercado ?? it.valorUnitarioEstimado);
+      tr.querySelector('.it-valor').value = v > 0 ? v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+      const modelo = tr.querySelector('.it-modelo');
+      const achado = (r?.fontes || []).find(f => f.usado_no_preco) || (r?.fontes || [])[0];
+      if (achado && !modelo.value) modelo.value = achado.produto || '';
+      tr.title = mercado ? `Mercado: ${brl(r.preco_unitario_mediano)} · com impostos/frete e margem: ${brl(mercado)}` : '';
+    });
+    const n = todos.filter(it => pesquisas[it.numeroItem]?.preco_unitario_mediano > 0).length;
+    dlg.querySelector('.it-msg').textContent = n ? `${n} item(ns) com preço de mercado pesquisado; os outros usam o estimado do órgão.` : 'Nenhum item pesquisado: usei o valor estimado do órgão. Rode a pesquisa de preços para usar o mercado.';
+    recalc();
+  };
+  dlg.querySelector('.it-aplicar').onclick = preencher;
+  dlg.querySelector('.it-base').onchange = preencher;
   dlg.querySelector('tbody').addEventListener('input', recalc);
   dlg.querySelector('tbody').addEventListener('change', recalc);
   dlg.querySelector('.it-todos').onchange = e => { dlg.querySelectorAll('.it-sel').forEach(c => c.checked = e.target.checked); recalc(); };
-  dlg.querySelector('form').onsubmit = async e => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
+  const montar = async () => {
+    const fd = new FormData(dlg.querySelector('form'));
     const perfil = perfis.find(p => p.id === fd.get('perfil')) || {};
     const linhas = [...dlg.querySelectorAll('tbody tr')].filter(tr => tr.querySelector('.it-sel').checked).map(tr => {
       const it = todos.find(x => String(x.numeroItem) === tr.dataset.n);
       return { it, marca: tr.querySelector('.it-marca').value.trim(), modelo: tr.querySelector('.it-modelo').value.trim(), valor: num(tr.querySelector('.it-valor').value) };
     });
-    if (!linhas.length) { dlg.querySelector('.it-msg').textContent = 'Marque pelo menos um item.'; return; }
-    const msg = dlg.querySelector('.it-msg');
-    msg.textContent = 'Gerando o arquivo…';
-    try {
-      await gerarDocx({ pregao, perfil, linhas, opc: Object.fromEntries(fd) });
-      msg.textContent = 'Pronto: confira o arquivo baixado antes de enviar.';
-    } catch (err) { msg.textContent = 'Não consegui gerar: ' + err.message; }
+    if (!linhas.length) { dlg.querySelector('.it-msg').textContent = 'Marque pelo menos um item.'; return null; }
+    return gerarDocx({ pregao, perfil, linhas, opc: Object.fromEntries(fd) });
   };
-  recalc();
+  const msg = dlg.querySelector('.it-msg');
+  dlg.querySelector('form').onsubmit = async e => {
+    e.preventDefault();
+    msg.textContent = 'Gerando o arquivo…';
+    try { const arq = await montar(); if (arq) { baixar(arq); msg.textContent = 'Pronto: confira o arquivo baixado antes de enviar.'; } }
+    catch (err) { msg.textContent = 'Não consegui gerar: ' + err.message; }
+  };
+  dlg.querySelector('.it-ver').onclick = async () => {
+    msg.textContent = 'Montando a pré-visualização…';
+    try { const arq = await montar(); if (arq) { msg.textContent = ''; await previsualizar(arq, () => baixar(arq)); } }
+    catch (err) { msg.textContent = 'Não consegui mostrar: ' + err.message; }
+  };
+  preencher();
 }
 
 // Valor por extenso (reais e centavos), como as propostas costumam pedir.
@@ -170,10 +210,14 @@ function extenso(valor) {
 
 async function gerarDocx({ pregao, perfil, linhas, opc }) {
   const docx = await import('https://esm.sh/docx@8.5.0');
-  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ImageRun, BorderStyle, Header } = docx;
+  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ImageRun, BorderStyle, Header, TableLayoutType, VerticalAlign } = docx;
+  // Larguras em twips (1/20 de ponto). Em porcentagem o docx grava um valor que o Word lê como 2% da página,
+  // e a tabela saía espremida. A4 (11906) menos as margens de 1000 de cada lado.
+  const UTIL = 11906 - 2000;
+  const COLS = [6, 38, 17, 8, 7, 12, 12].map(pc => Math.round(UTIL * pc / 100));
   const t = (texto, o = {}) => new TextRun({ text: String(texto ?? ''), font: 'Calibri', size: 21, ...o });
   const p = (filhos, o = {}) => new Paragraph({ children: Array.isArray(filhos) ? filhos : [filhos], spacing: { after: 100 }, ...o });
-  const cel = (texto, o = {}) => new TableCell({ children: [p(t(texto, { size: 18, bold: o.bold }), { alignment: o.alinhar || AlignmentType.LEFT, spacing: { after: 0 } })], shading: o.fundo ? { fill: o.fundo } : undefined, width: o.largura ? { size: o.largura, type: WidthType.PERCENTAGE } : undefined });
+  const cel = (texto, o = {}) => new TableCell({ children: [p(t(texto, { size: 18, bold: o.bold }), { alignment: o.alinhar || AlignmentType.LEFT, spacing: { after: 0 } })], shading: o.fundo ? { fill: o.fundo } : undefined, width: o.largura ? { size: o.largura, type: WidthType.DXA } : undefined, verticalAlign: VerticalAlign.CENTER, margins: { top: 40, bottom: 40, left: 70, right: 70 } });
 
   // Timbre: logo + dados da empresa no cabeçalho de todas as páginas.
   const cab = [];
@@ -190,15 +234,17 @@ async function gerarDocx({ pregao, perfil, linhas, opc }) {
   const x = pregao.raw || {};
   const total = linhas.reduce((s, l) => s + l.valor * (l.it.quantidade || 0), 0);
   const tabela = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: UTIL, type: WidthType.DXA },
+    columnWidths: COLS,
+    layout: TableLayoutType.FIXED,
     rows: [
-      new TableRow({ tableHeader: true, children: ['Item', 'Descrição', 'Marca / Modelo', 'Unid.', 'Qtd.', 'Valor unit.', 'Valor total'].map((h, i) => cel(h, { bold: true, fundo: 'E6E6E6', largura: [6, 40, 16, 8, 7, 11, 12][i] })) }),
+      new TableRow({ tableHeader: true, children: ['Item', 'Descrição', 'Marca / Modelo', 'Unid.', 'Qtd.', 'Valor unit.', 'Valor total'].map((h, i) => cel(h, { bold: true, fundo: 'E6E6E6', largura: COLS[i] })) }),
       ...linhas.map(l => new TableRow({ children: [
-        cel(l.it.numeroItem, { alinhar: AlignmentType.CENTER }), cel(l.it.descricao), cel([l.marca, l.modelo].filter(Boolean).join(' / ')),
-        cel(l.it.unidadeMedida || ''), cel((l.it.quantidade || 0).toLocaleString('pt-BR'), { alinhar: AlignmentType.RIGHT }),
-        cel(l.valor ? brl(l.valor) : '', { alinhar: AlignmentType.RIGHT }), cel(l.valor ? brl(l.valor * (l.it.quantidade || 0)) : '', { alinhar: AlignmentType.RIGHT }),
+        cel(l.it.numeroItem, { alinhar: AlignmentType.CENTER, largura: COLS[0] }), cel(l.it.descricao, { largura: COLS[1] }), cel([l.marca, l.modelo].filter(Boolean).join(' / '), { largura: COLS[2] }),
+        cel(l.it.unidadeMedida || '', { largura: COLS[3] }), cel((l.it.quantidade || 0).toLocaleString('pt-BR'), { alinhar: AlignmentType.RIGHT, largura: COLS[4] }),
+        cel(l.valor ? brl(l.valor) : '', { alinhar: AlignmentType.RIGHT, largura: COLS[5] }), cel(l.valor ? brl(l.valor * (l.it.quantidade || 0)) : '', { alinhar: AlignmentType.RIGHT, largura: COLS[6] }),
       ] })),
-      new TableRow({ children: [new TableCell({ columnSpan: 6, children: [p(t('VALOR TOTAL DA PROPOSTA', { bold: true, size: 18 }), { alignment: AlignmentType.RIGHT, spacing: { after: 0 } })] }), cel(total ? brl(total) : '', { bold: true, alinhar: AlignmentType.RIGHT })] }),
+      new TableRow({ children: [new TableCell({ columnSpan: 6, width: { size: COLS.slice(0, 6).reduce((a, b) => a + b, 0), type: WidthType.DXA }, children: [p(t('VALOR TOTAL DA PROPOSTA', { bold: true, size: 18 }), { alignment: AlignmentType.RIGHT, spacing: { after: 0 } })] }), cel(total ? brl(total) : '', { bold: true, alinhar: AlignmentType.RIGHT, largura: COLS[6] })] }),
     ],
   });
 
@@ -226,13 +272,31 @@ async function gerarDocx({ pregao, perfil, linhas, opc }) {
     p(t(perfil.razao || ''), { alignment: AlignmentType.CENTER }),
   ].filter(Boolean);
 
-  const doc = new Document({ sections: [{ headers: { default: new Header({ children: cab }) }, properties: { page: { margin: { top: 1700, bottom: 1000, left: 1000, right: 1000 } } }, children: filhos }] });
+  const doc = new Document({ sections: [{ headers: { default: new Header({ children: cab }) }, properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1700, bottom: 1000, left: 1000, right: 1000, header: 500 } } }, children: filhos }] });
   const blob = await Packer.toBlob(doc);
+  const nome = `Proposta - ${(x.numeroCompra || 'pregao').replace(/[\\/:*?"<>|]/g, '-')} - ${(perfil.nome || 'empresa').replace(/[\\/:*?"<>|]/g, '-')}.docx`;
+  return { blob, nome };
+}
+
+function baixar({ blob, nome }) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `Proposta - ${(x.numeroCompra || 'pregao').replace(/[\\/:*?"<>|]/g, '-')} - ${(perfil.nome || 'empresa').replace(/[\\/:*?"<>|]/g, '-')}.docx`;
+  a.download = nome;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// Mostra o próprio .docx renderizado (como o Word vai abrir), antes de baixar.
+async function previsualizar(arquivo, aoBaixar) {
+  const { renderAsync } = await import('https://esm.sh/docx-preview@0.3.2');
+  const dlg = document.createElement('dialog');
+  dlg.className = 'ap-dialog it-prev';
+  dlg.innerHTML = `<div class="ap-topo"><h2>Pré-visualização da proposta</h2><div class="ap-acoes"><button type="button" class="btn-primary it-prev-baixar">Baixar (.docx)</button><button type="button" class="btn-ghost it-prev-fechar">Fechar</button></div></div>
+    <p class="m">É assim que o arquivo abre no Word. A aparência pode variar um pouco conforme a versão do Word.</p><div class="it-prev-doc"></div>`;
+  document.body.append(dlg); dlg.showModal();
+  dlg.querySelector('.it-prev-fechar').onclick = () => { dlg.close(); dlg.remove(); };
+  dlg.querySelector('.it-prev-baixar').onclick = () => { aoBaixar(); dlg.close(); dlg.remove(); };
+  await renderAsync(arquivo.blob, dlg.querySelector('.it-prev-doc'), null, { inWrapper: true, ignoreWidth: false, breakPages: true });
 }
 
 window.__extenso = extenso; // usado no teste
