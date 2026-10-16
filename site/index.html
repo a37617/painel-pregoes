@@ -152,6 +152,7 @@ footer a{color:var(--accent)}
       <label class="span2">Palavras no objeto (separe por vírgula; qualquer uma serve)
         <input id="q" placeholder="ex.: notebook, computador, impressora">
       </label>
+      <label>Município <input id="mun" placeholder="ex.: Novo Hamburgo"></label>
       <label>Valor mínimo (R$) <input id="vmin" type="number" min="0" step="1000" placeholder="0"></label>
       <label>Valor máximo (R$) <input id="vmax" type="number" min="0" step="1000" placeholder="sem limite"></label>
       <label>Registro de preços
@@ -229,7 +230,7 @@ const PAGE = 50;
 
 // ---------- setup ----------
 UFS.forEach(u => $('uf').insertAdjacentHTML('beforeend', `<option>${u}</option>`));
-const FILTERS = ['modalidade','uf','prazo','q','vmin','vmax','srp'];
+const FILTERS = ['modalidade','uf','prazo','q','mun','vmin','vmax','srp'];
 // Filtros vêm do link (#uf=SP&q=notebook) ou, se não houver, do que ficou salvo neste navegador.
 (function restoreFilters(){
   const h = new URLSearchParams(location.hash.slice(1));
@@ -324,10 +325,12 @@ function applyFilters(){
   const terms = $('q').value.split(',').map(t => norm(t.trim())).filter(Boolean);
   const vmin = parseFloat($('vmin').value), vmax = parseFloat($('vmax').value), srp = $('srp').value;
   const mod = $('modalidade').value, uf = $('uf').value, prazo = parseFloat($('prazo').value);
+  const mun = norm($('mun').value.trim());
   VIEW = ALL.filter(r =>
     (!mod || r.mod === +mod) &&
     (!uf || r.uf === uf) &&
     (isNaN(prazo) || (r.encMs > 0 && r.encMs <= prazo * 864e5)) &&
+    (!mun || norm(r.mun).includes(mun)) &&
     (!terms.length || terms.some(t => r.objN.includes(t))) &&
     (isNaN(vmin) || (r.val ?? 0) >= vmin) &&
     (isNaN(vmax) || (r.val ?? 0) <= vmax) &&
@@ -441,7 +444,7 @@ document.querySelectorAll('th[data-k]').forEach(th => th.onclick = () => {
   else { sortK = th.dataset.k; sortDir = th.dataset.k === 'val' || th.dataset.k === 'pub' ? 'desc' : 'asc'; }
   page = 0; renderTable();
 });
-let deb; ['q','vmin','vmax','srp'].forEach(id => $(id).addEventListener('input', () => { clearTimeout(deb); deb = setTimeout(render, 200); }));
+let deb; ['q','mun','vmin','vmax','srp'].forEach(id => $(id).addEventListener('input', () => { clearTimeout(deb); deb = setTimeout(render, 200); }));
 $('clearF').onclick = () => { FILTERS.forEach(k => $(k).value = ''); Object.keys(facet).forEach(k => facet[k] = null); render(); };
 
 // ---------- CSV ----------
@@ -513,7 +516,7 @@ async function openDrawer(r){
 window.painel = {
   registros: () => ALL,
   aplicarFiltros(f){
-    ['q','uf','vmin','vmax','prazo','modalidade','srp'].forEach(k => $(k).value = f[k] ?? '');
+    ['q','uf','mun','vmin','vmax','prazo','modalidade','srp'].forEach(k => $(k).value = f[k] ?? '');
     Object.keys(facet).forEach(k => facet[k] = null);
     render();
     return VIEW.length;
