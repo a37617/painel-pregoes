@@ -38,7 +38,7 @@ window.addEventListener('itens-carregados', e => {
   barra.className = 'it-barra';
   barra.innerHTML = `
     <input type="search" class="it-busca" placeholder="Pesquisar nos itens desta licitação">
-    ${termos.length ? `<label class="it-chk"><input type="checkbox" class="it-meus" ${qtdBate ? 'checked' : ''}> Só itens com os termos ${origem} (${qtdBate})</label>` : ''}
+    ${termos.length ? `<label class="it-chk"><input type="checkbox" class="it-meus"> Só itens com os termos ${origem} (${qtdBate} de ${items.length})</label>` : ''}
     <span class="m it-cont"></span>
     <button type="button" class="btn-primary it-proposta"><i data-ic="documento"></i> Gerar proposta (Word)</button>`;
   tabela.closest('.tscroll').before(barra);

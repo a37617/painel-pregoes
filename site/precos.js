@@ -115,6 +115,8 @@ window.addEventListener('itens-carregados', e => {
       ? '<span class="m"><i data-ic="info"></i> O órgão cadastrou no PNCP só um item genérico; a lista real de produtos está no edital.</span> <button type="button" class="pz-ler" title="A IA lê o edital e o termo de referência e monta a lista de itens"><i data-ic="documento"></i> Ler os itens do edital (IA)</button>'
       : motivo ? `<span class="m"><i data-ic="info"></i> ${motivo}</span>`
       : '<button type="button" class="pz-um" title="Pesquisar o preço deste item na internet"><i data-ic="busca"></i> Pesquisar preço deste item</button>'}</td></tr>`);
+    // O filtro de itens (itens.js) pode ter rodado antes: a linha da pesquisa segue o item (escondido ou não).
+    if (tr.hidden) tr.nextElementSibling.hidden = true;
   });
   const pesquisaveis = items.filter(it => !semPesquisa(it)).map(it => it.numeroItem);
 
