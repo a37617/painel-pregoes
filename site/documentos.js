@@ -106,18 +106,18 @@ function desenhar() {
   const faltam = p ? ['razao', 'cnpj', 'endereco', 'repNome'].filter(k => !p[k]) : [];
   v.innerHTML = `<div class="ap-topo ap-pad-x"><div><h2>Documentos</h2><p class="m">Certidões com aviso de vencimento e declarações prontas com os dados da empresa.</p></div>
       ${estado.perfis.length ? seletorPerfil('pregoes.docPerfil', false) : ''}</div>
-    ${!estado.perfis.length ? `<div class="card ap-pad"><p class="empty">Crie um perfil de empresa para guardar certidões e gerar declarações.</p><button class="btn-primary" data-ir="perfis">+ Criar perfil</button></div>` : `
+    ${!estado.perfis.length ? `<div class="card ap-pad"><p class="empty">Crie um perfil de empresa para guardar certidões e gerar declarações.</p><button class="btn-primary" data-ir="perfis"><i data-ic="mais"></i> Criar perfil</button></div>` : `
     ${faltam.length ? `<div class="ui-aviso">Faltam dados da empresa no perfil (${faltam.map(k => ({ razao: 'razão social', cnpj: 'CNPJ', endereco: 'endereço', repNome: 'representante' })[k]).join(', ')}). As declarações sairão com esses campos em branco. <button class="btn-ghost" data-ir="perfis">Completar perfil</button></div>` : ''}
     <section class="card ap-pad ui-bloco">
       <div class="ap-topo"><div><h3>Certidões e documentos da empresa</h3><p class="m">${certs.filter(c => situacaoCert(c).cls === 'hot').length} vencida(s) · ${certs.filter(c => situacaoCert(c).cls === 'soon').length} vencendo em até 15 dias</p></div>
-        <button class="btn-primary" id="docNovaCert">+ Certidão / documento</button></div>
+        <button class="btn-primary" id="docNovaCert"><i data-ic="mais"></i> Certidão / documento</button></div>
       ${certs.length ? `<div class="tscroll"><table class="ui-tabela"><thead><tr><th>Documento</th><th>Nº / observação</th><th>Emissão</th><th>Situação</th><th></th></tr></thead><tbody>
         ${certs.map(c => { const s = situacaoCert(c), t = tipoCert(c.tipo); return `<tr>
           <td><b>${esc(c.nome || t[1])}</b></td><td class="m">${esc([c.numero, c.obs].filter(Boolean).join(' · ') || '—')}</td><td>${dataBR(c.emissao)}</td>
           <td><span class="badge ${s.cls}">${esc(s.txt)}</span></td>
-          <td class="ui-acoes">${(c.link || t[2]) ? `<a class="btn-ghost" href="${esc(c.link || t[2])}" target="_blank" rel="noopener">Emitir ↗</a>` : ''}<button class="btn-ghost" data-cert="${esc(c.id)}">Editar</button></td></tr>`; }).join('')}
+          <td class="ui-acoes">${(c.link || t[2]) ? `<a class="btn-ghost" href="${esc(c.link || t[2])}" target="_blank" rel="noopener">Emitir <i data-ic="externo"></i></a>` : ''}<button class="btn-ghost" data-cert="${esc(c.id)}">Editar</button></td></tr>`; }).join('')}
       </tbody></table></div>` : '<p class="empty">Nenhuma certidão cadastrada. Cadastre a validade de cada uma para receber aviso antes de vencer.</p>'}
-      <details class="ui-links"><summary>Onde emitir as principais certidões</summary><ul>${TIPOS_CERT.filter(t => t[2]).map(t => `<li><a href="${t[2]}" target="_blank" rel="noopener">${t[1]} ↗</a></li>`).join('')}</ul></details>
+      <details class="ui-links"><summary>Onde emitir as principais certidões</summary><ul>${TIPOS_CERT.filter(t => t[2]).map(t => `<li><a href="${t[2]}" target="_blank" rel="noopener">${t[1]} <i data-ic="externo"></i></a></li>`).join('')}</ul></details>
     </section>
     <section class="card ap-pad ui-bloco">
       <div class="ap-topo"><div><h3>Declarações</h3><p class="m">Marque as que o edital pede, escolha a licitação e gere tudo num PDF só.</p></div>
@@ -131,8 +131,8 @@ function desenhar() {
       <div class="ui-decls">${DECLARACOES.map(([k, t, base]) => `<label class="ui-decl"><input type="checkbox" value="${k}" ${marcadas.has(k) ? 'checked' : ''}><span><b>${esc(t)}</b><small>${esc(base)}</small></span></label>`).join('')}
         ${pers.map(d => `<label class="ui-decl"><input type="checkbox" value="p:${esc(d.id)}" ${marcadas.has('p:' + d.id) ? 'checked' : ''}><span><b>${esc(d.titulo)}</b><small>Personalizada · <a href="#" data-editdecl="${esc(d.id)}">editar</a></small></span></label>`).join('')}
       </div>
-      <div class="ap-rodape"><button class="btn-ghost" id="docNovaDecl">+ Declaração personalizada</button>
-        <button class="btn-primary" id="docGerar">📄 Gerar PDF das marcadas (<span id="docQtd">${[...marcadas].length}</span>)</button></div>
+      <div class="ap-rodape"><button class="btn-ghost" id="docNovaDecl"><i data-ic="mais"></i> Declaração personalizada</button>
+        <button class="btn-primary" id="docGerar"><i data-ic="documento"></i> Gerar PDF das marcadas (<span id="docQtd">${[...marcadas].length}</span>)</button></div>
     </section>`}`;
   ligarSeletorPerfil(v, desenhar);
   $$('[data-ir]', v).forEach(b => b.onclick = () => window.irParaAba(b.dataset.ir));
@@ -196,7 +196,7 @@ async function editarDecl(d) {
   if (await personalizadas.salvar(lista)) desenhar();
 }
 
-v = registrarAba('documentos', '📄 Documentos', async () => {
+v = registrarAba('documentos', '<i data-ic="documento"></i> Documentos', async () => {
   if (!certidoes.pronto) { v.innerHTML = '<p class="empty">Carregando…</p>'; await Promise.all([certidoes.carregar(), personalizadas.carregar()]); }
   desenhar();
 });

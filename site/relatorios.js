@@ -55,7 +55,7 @@ function desenhar() {
 
   v.innerHTML = `<div class="card ap-pad rel">
     <div class="ap-topo rel-nao-imprime"><div><h2>Relatórios</h2><p class="m">Resultados das licitações do Kanban por período e empresa. Para mandar ao cliente, escolha só a empresa dele.</p></div>
-      <div class="ap-acoes"><button class="btn-primary" id="relPdf">🖨️ Gerar PDF</button></div></div>
+      <div class="ap-acoes"><button class="btn-primary" id="relPdf"><i data-ic="impressora"></i> Gerar PDF</button></div></div>
     <div class="rel-filtros rel-nao-imprime">
       <label>Empresa<select id="relPerfil"><option value="">Todas as empresas (consolidado)</option>${estado.perfis.map(p => `<option value="${esc(p.id)}" ${p.id === perfilId ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></label>
       <label>De<input type="date" id="relIni" value="${ini}"></label><label>Até<input type="date" id="relFim" value="${fim}"></label>
@@ -109,7 +109,7 @@ function desenhar() {
 }
 window.addEventListener('afterprint', () => document.body.classList.remove('imprimindo-relatorio'));
 
-registrarAba('relatorios', '📊 Relatórios', desenhar);
+registrarAba('relatorios', '<i data-ic="grafico"></i> Relatórios', desenhar);
 async function iniciar() {
   try { comentarios = await carregar('relatorios'); } catch {}
   if (store.get('pregoes.aba') === 'relatorios') desenhar();

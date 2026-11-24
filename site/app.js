@@ -79,7 +79,7 @@ function montarAbas() {
   const header = $('header.top');
   const nav = document.createElement('nav');
   nav.className = 'ap-abas';
-  nav.innerHTML = `<button data-aba="busca">🔎 Busca</button><button data-aba="kanban">🗂️ Kanban <span class="ap-cont" id="apContKanban"></span></button><button data-aba="perfis">🏢 Perfis de empresa</button>`;
+  nav.innerHTML = `<button data-aba="busca"><i data-ic="busca"></i> Busca</button><button data-aba="kanban"><i data-ic="kanban"></i> Kanban <span class="ap-cont" id="apContKanban"></span></button><button data-aba="perfis"><i data-ic="empresa"></i> Perfis de empresa</button>`;
   header.after(nav);
   nav.querySelectorAll('button').forEach(b => b.onclick = () => irPara(b.dataset.aba));
   const vk = document.createElement('section'); vk.id = 'apKanban'; vk.className = 'ap-view';
@@ -125,10 +125,10 @@ function desenharPerfis(editando = null) {
   if (editando) return formularioPerfil(editando);
   v.innerHTML = `<div class="card ap-pad">
     <div class="ap-topo"><div><h2>Perfis de empresa</h2><p class="m">Cada perfil é uma empresa (ou cliente): termos de busca, filtros e os dados que vão nas propostas.</p></div>
-      <button class="btn-primary" id="apNovoPerfil">+ Novo perfil</button></div>
+      <button class="btn-primary" id="apNovoPerfil"><i data-ic="mais"></i> Novo perfil</button></div>
     ${perfis.length ? `<div class="ap-perfis">${perfis.map(p => `
       <div class="ap-perfil-card">
-        ${p.logo ? `<img src="${p.logo}" alt="">` : '<div class="ap-logo-vazio">🏢</div>'}
+        ${p.logo ? `<img src="${p.logo}" alt="">` : '<div class="ap-logo-vazio"><i data-ic="empresa"></i></div>'}
         <div class="ap-perfil-info"><b>${esc(p.nome)}</b><div class="m">${esc(p.razao || 'Dados da empresa não preenchidos')}${p.cnpj ? ' · ' + esc(p.cnpj) : ''}</div>
           <div class="m">${termosDe(p).length} termo(s)${(p.ufs || []).length ? ' · ' + p.ufs.join(', ') : ' · Brasil inteiro'}</div></div>
         <div class="ap-acoes"><button class="btn-ghost" data-usar="${esc(p.id)}">Usar na busca</button><button class="btn-ghost" data-editar="${esc(p.id)}">Editar</button></div>
@@ -143,7 +143,7 @@ function desenharPerfis(editando = null) {
 function formularioPerfil(p) {
   const v = $('#apPerfis');
   v.innerHTML = `<form class="card ap-pad ap-form" id="apFormPerfil">
-    <div class="ap-topo"><h2>${p.id ? 'Editar perfil' : 'Novo perfil'}</h2><button type="button" class="btn-ghost" id="apVoltar">← Voltar</button></div>
+    <div class="ap-topo"><h2>${p.id ? 'Editar perfil' : 'Novo perfil'}</h2><button type="button" class="btn-ghost" id="apVoltar"><i data-ic="voltar"></i> Voltar</button></div>
     <fieldset><legend>Busca</legend>
       <label class="ap-largo">Nome do perfil *<input name="nome" required value="${esc(p.nome)}" placeholder="Ex.: Minha empresa – informática"></label>
       <label class="ap-largo">Termos de busca (um por linha)<textarea name="termos" rows="5" placeholder="notebook&#10;computador&#10;monitor">${esc(p.termos || '')}</textarea></label>
@@ -260,7 +260,7 @@ function desenharKanban() {
       <div><h2>Kanban</h2><p class="m">${cards.length} licitação(ões) acompanhada(s). Arraste os cards entre as colunas ou use o seletor do card.</p></div>
       <div class="ap-acoes">
         <select id="apKFiltro"><option value="">Todas as empresas</option>${perfis.map(p => `<option value="${esc(p.id)}" ${p.id === filtro ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select>
-        <button class="btn-ghost" id="apKManual">+ Adicionar manual</button>
+        <button class="btn-ghost" id="apKManual"><i data-ic="mais"></i> Adicionar manual</button>
       </div></div>
     <div class="ap-board">${COLUNAS.map(col => {
       const doCol = cards.filter(c => c.coluna === col.id).sort((a, b) => new Date(a.encerramento || 8.64e15) - new Date(b.encerramento || 8.64e15));
@@ -291,7 +291,7 @@ function cardHtml(c, perfilNome) {
     <div class="ap-card-obj">${esc(c.objeto)}</div>
     <div class="m">${esc(c.orgao)} · ${esc(c.cidade)}/${esc(c.uf)}</div>
     <div class="ap-card-meta">${fim ? '' : encBadge(c.encerramento)}<span>${brl(c.valorFinal || c.valorProposta || c.valor)}</span>${perfilNome ? `<span class="ap-tag">${esc(perfilNome)}</span>` : ''}</div>
-    ${c.notas ? `<div class="ap-card-nota">📝 ${esc(c.notas.slice(0, 120))}</div>` : ''}
+    ${c.notas ? `<div class="ap-card-nota"><i data-ic="lapis"></i> ${esc(c.notas.slice(0, 120))}</div>` : ''}
     ${c.coluna === 'perdeu' && c.motivo ? `<div class="ap-card-nota">Motivo: ${esc(c.motivo)}</div>` : ''}
     <div class="ap-card-acoes"><select class="ap-mover" title="Mover para">${COLUNAS.map(col => `<option value="${col.id}" ${col.id === c.coluna ? 'selected' : ''}>${col.nome}</option>`).join('')}</select>
       <button class="btn-ghost ap-abrir" title="Abrir a licitação">Abrir</button><button class="btn-ghost ap-editar" title="Notas, valores e resultado">Editar</button></div>
@@ -310,7 +310,7 @@ function editarCard(c) {
   dlg.className = 'ap-dialog';
   const dtLocal = s => { if (!s) return ''; const d = new Date(s); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); };
   dlg.innerHTML = `<form method="dialog" class="ap-form">
-    <div class="ap-topo"><h2>${novo ? 'Adicionar licitação manualmente' : 'Card do Kanban'}</h2><button type="button" class="btn-ghost" value="x" id="apKFechar">Fechar ✕</button></div>
+    <div class="ap-topo"><h2>${novo ? 'Adicionar licitação manualmente' : 'Card do Kanban'}</h2><button type="button" class="btn-ghost" value="x" id="apKFechar">Fechar <i data-ic="fechar"></i></button></div>
     <label class="ap-largo">Objeto *<textarea name="objeto" rows="2" required>${esc(c.objeto)}</textarea></label>
     <label>Órgão<input name="orgao" value="${esc(c.orgao)}"></label>
     <label>Número do edital<input name="numero" value="${esc(c.numero || '')}"></label>
@@ -325,7 +325,7 @@ function editarCard(c) {
     <label>Valor final / adjudicado (R$)<input type="number" step="0.01" name="valorFinal" value="${esc(c.valorFinal ?? '')}"></label>
     <label class="ap-largo">Motivo da perda ou desistência<input name="motivo" value="${esc(c.motivo || '')}" placeholder="Ex.: preço acima do vencedor, documento vencido…"></label>
     <label class="ap-largo">Notas<textarea name="notas" rows="4">${esc(c.notas)}</textarea></label>
-    ${c.historico?.length ? `<div class="ap-largo m">Histórico: ${c.historico.map(h => `${COLUNAS.find(x => x.id === h.coluna)?.nome || h.coluna} (${fmtDT(h.em)})`).join(' → ')}</div>` : ''}
+    ${c.historico?.length ? `<div class="ap-largo m">Histórico: ${c.historico.map(h => `${COLUNAS.find(x => x.id === h.coluna)?.nome || h.coluna} (${fmtDT(h.em)})`).join(' <i data-ic="seguir"></i> ')}</div>` : ''}
     <div class="ap-rodape">${novo ? '<span></span>' : '<button type="button" class="btn-ghost ap-perigo" id="apKApagar">Tirar do Kanban</button>'}<button class="btn-primary" type="submit" value="ok">Salvar</button></div>
   </form>`;
   document.body.append(dlg);
@@ -364,7 +364,7 @@ window.addEventListener('pregao-aberto', e => {
   if (!r || !links) return;
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'ap-btn-kanban';
-  const pintar = () => { const c = cardDoPregao(r.id); b.textContent = c ? `✓ No Kanban: ${COLUNAS.find(x => x.id === c.coluna)?.nome}` : '➕ Adicionar ao Kanban'; };
+  const pintar = () => { const c = cardDoPregao(r.id); b.innerHTML = c ? `<i data-ic="certo"></i> No Kanban: ${COLUNAS.find(x => x.id === c.coluna)?.nome}` : '<i data-ic="mais"></i> Adicionar ao Kanban'; };
   pintar();
   b.onclick = async () => {
     if (cardDoPregao(r.id)) { irPara('kanban'); document.getElementById('drawer').classList.remove('open'); document.getElementById('dbg').classList.remove('open'); return; }

@@ -34,14 +34,14 @@ function desenhar() {
   const ganhos = estado.kanban.filter(c => c.coluna === 'ganhou' && (!perfilId || c.perfil === perfilId) && !pos.itens.some(i => i.card === c.id));
   v.innerHTML = `<div class="ap-topo ap-pad-x"><div><h2>Pós-licitação</h2><p class="m">Atas, contratos, empenhos, entregas e pagamentos de tudo que você ganhou.</p></div>
       <span class="ap-acoes">${seletorPerfil('pregoes.posPerfil')}
-      <button class="btn-primary" data-novo="ata">+ Ata</button><button class="btn-primary" data-novo="contrato">+ Contrato</button><button class="btn-primary" data-novo="empenho">+ Empenho</button></span></div>
+      <button class="btn-primary" data-novo="ata"><i data-ic="mais"></i> Ata</button><button class="btn-primary" data-novo="contrato"><i data-ic="mais"></i> Contrato</button><button class="btn-primary" data-novo="empenho"><i data-ic="mais"></i> Empenho</button></span></div>
     <div class="kpis">
       <div class="card kpi"><div class="l">Instrumentos vigentes</div><div class="v">${r.inst.length}</div><div class="h">${r.contratos} contrato(s)</div></div>
       <div class="card kpi"><div class="l">Saldo para empenhar</div><div class="v">${brl(r.saldo, 0)}</div><div class="h">${brl(r.empenhado, 0)} empenhados</div></div>
       <div class="card kpi"><div class="l">Empenhos em aberto</div><div class="v">${r.abertos.length}</div><div class="h">${brl(r.abertos.reduce((s, e) => s + num(e.valor) - pago(e), 0), 0)} a faturar/receber</div></div>
       <div class="card kpi ${r.aReceber ? 'alert' : ''}"><div class="l">Entregue e não pago</div><div class="v">${brl(r.aReceber, 0)}</div><div class="h">${brl(r.recebido, 0)} já recebidos</div></div>
     </div>
-    ${ganhos.length ? `<div class="ui-aviso">🏆 ${ganhos.length} licitação(ões) ganha(s) no Kanban ainda sem ata ou contrato: ${ganhos.slice(0, 3).map(c => `<button class="btn-ghost" data-ganho="${esc(c.id)}">${esc((c.objeto || '').slice(0, 50))}…</button>`).join(' ')}</div>` : ''}
+    ${ganhos.length ? `<div class="ui-aviso"><i data-ic="trofeu"></i> ${ganhos.length} licitação(ões) ganha(s) no Kanban ainda sem ata ou contrato: ${ganhos.slice(0, 3).map(c => `<button class="btn-ghost" data-ganho="${esc(c.id)}">${esc((c.objeto || '').slice(0, 50))}…</button>`).join(' ')}</div>` : ''}
     <section class="card ap-pad">
       <nav class="ui-sub">${Object.entries(TIPOS).map(([k, n]) => `<button data-aba="${k}" class="${k === aba ? 'ativa' : ''}">${n.split(' ')[0]}s (${lista.filter(i => i.tipo === k).length})</button>`).join('')}</nav>
       ${daAba.length ? (aba === 'empenho' ? tabelaEmpenhos(daAba) : tabelaInstrumentos(daAba)) : `<p class="empty">Nenhum registro de ${TIPOS[aba].toLowerCase()}. <button class="btn-ghost" data-novo="${aba}">Cadastrar</button></p>`}
@@ -73,8 +73,8 @@ function tabelaEmpenhos(l) {
       <td>${esc(inst(e.vinculo)?.numero ? `${TIPOS[inst(e.vinculo).tipo].split(' ')[0]} ${inst(e.vinculo).numero}` : e.orgao || '—')}<div class="m">${esc(e.objeto || inst(e.vinculo)?.orgao || '')}</div></td>
       <td class="num">${brl(num(e.valor))}</td><td class="num">${brl(ent)}</td><td class="num">${brl(pg)}${ent - pg > 0.009 ? `<div class="pz-medio">falta receber ${brl(ent - pg)}</div>` : ''}</td>
       <td>${dataBR(e.prazo)}${d != null && ent < num(e.valor) ? `<br><span class="badge ${d < 0 ? 'hot' : d <= 5 ? 'soon' : 'ok'}">${d < 0 ? `atrasado ${-d}d` : `${d} dia(s)`}</span>` : ''}</td>
-      <td class="ui-acoes"><button class="btn-ghost" data-mov="entregas" data-id="${esc(e.id)}">+ Entrega</button><button class="btn-ghost" data-mov="pagamentos" data-id="${esc(e.id)}">+ Pagamento</button><button class="btn-ghost" data-editar="${esc(e.id)}">Editar</button></td></tr>
-      ${[...(e.entregas || []).map(x => ['📦 Entrega', x]), ...(e.pagamentos || []).map(x => ['💰 Pagamento', x])].sort((a, b) => (a[1].data || '').localeCompare(b[1].data || '')).map(([t, x]) => `<tr class="ui-sublinha"><td></td><td colspan="6" class="m">${t} ${dataBR(x.data)} · ${brl(num(x.valor))}${x.descricao ? ' · ' + esc(x.descricao) : ''}</td></tr>`).join('')}`; }).join('')}
+      <td class="ui-acoes"><button class="btn-ghost" data-mov="entregas" data-id="${esc(e.id)}"><i data-ic="mais"></i> Entrega</button><button class="btn-ghost" data-mov="pagamentos" data-id="${esc(e.id)}"><i data-ic="mais"></i> Pagamento</button><button class="btn-ghost" data-editar="${esc(e.id)}">Editar</button></td></tr>
+      ${[...(e.entregas || []).map(x => ['<i data-ic="pacote"></i> Entrega', x]), ...(e.pagamentos || []).map(x => ['<i data-ic="dinheiro"></i> Pagamento', x])].sort((a, b) => (a[1].data || '').localeCompare(b[1].data || '')).map(([t, x]) => `<tr class="ui-sublinha"><td></td><td colspan="6" class="m">${t} ${dataBR(x.data)} · ${brl(num(x.valor))}${x.descricao ? ' · ' + esc(x.descricao) : ''}</td></tr>`).join('')}`; }).join('')}
   </tbody></table></div>`;
 }
 
@@ -109,7 +109,7 @@ async function movimento(idEmp, campo) {
   if (await pos.salvar(lista)) desenhar();
 }
 
-v = registrarAba('poslicitacao', '📑 Pós-licitação', async () => {
+v = registrarAba('poslicitacao', '<i data-ic="prancheta"></i> Pós-licitação', async () => {
   if (!pos.pronto) { v.innerHTML = '<p class="empty">Carregando…</p>'; await pos.carregar(); }
   desenhar();
 });

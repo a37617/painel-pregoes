@@ -52,7 +52,7 @@ function montar() {
   const alvo = header.lastElementChild || header; // a caixa de botões do topo (Agentes IA, Tema…)
   const b = document.createElement('button');
   b.id = 'avSino'; b.type = 'button'; b.className = 'btn-ghost av-sino'; b.title = 'Avisos';
-  b.innerHTML = '🔔<span class="av-cont" id="avCont"></span>';
+  b.innerHTML = '<i data-ic="sino"></i><span class="av-cont" id="avCont"></span>';
   alvo.prepend(b);
   const painel = document.createElement('div');
   painel.id = 'avPainel'; painel.className = 'card av-painel'; painel.hidden = true;
@@ -65,7 +65,7 @@ function desenharPainel() {
   const a = coletar(), p = $('#avPainel');
   p.innerHTML = `<div class="ap-topo"><b>Avisos</b><span class="m">${a.length} item(ns)</span></div>
     ${a.length ? a.slice(0, 40).map((x, i) => `<button class="av-item av-${x.nivel}" data-i="${i}"><span>${esc(x.txt)}</span>${x.sub ? `<small>${esc(x.sub)}</small>` : ''}</button>`).join('')
-      : '<p class="m">Nada pedindo atenção agora. 🎉</p>'}`;
+      : '<p class="m">Nada pedindo atenção agora. <i data-ic="ok"></i></p>'}`;
   p.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { p.hidden = true; window.irParaAba(a[b.dataset.i].aba); });
 }
 
@@ -79,13 +79,14 @@ function atualizar() {
 function separarIcones(nav) {
   nav.querySelectorAll('button[data-aba]:not([data-sep])').forEach(b => {
     b.dataset.sep = '1';
-    const t = b.firstChild;
-    if (t?.nodeType !== 3) return;
-    const [ico, ...resto] = t.textContent.trim().split(' ');
-    const i = document.createElement('span'); i.className = 'av-ico'; i.textContent = ico;
-    const r = document.createElement('span'); r.className = 'av-rot'; r.textContent = ' ' + resto.join(' ') + ' ';
-    b.title = resto.join(' ');
-    t.replaceWith(i, r);
+    // O botão começa com o ícone (<i data-ic>); o texto logo depois vira o rótulo, que some com o menu recolhido.
+    const ico = b.querySelector(':scope > i[data-ic]');
+    const t = ico?.nextSibling;
+    if (!ico || t?.nodeType !== 3) return;
+    ico.classList.add('av-ico');
+    const r = document.createElement('span'); r.className = 'av-rot'; r.textContent = t.textContent;
+    b.title = t.textContent.trim();
+    t.replaceWith(r);
   });
 }
 
@@ -96,10 +97,10 @@ function menuLateral() {
   nav.dataset.lateral = '1';
   const topo = document.createElement('div');
   topo.className = 'av-menu-topo';
-  topo.innerHTML = '<span class="av-marca">🏛️ <b>Painel de Pregões</b></span><button type="button" class="av-recolher" title="Recolher menu">«</button>';
+  topo.innerHTML = '<span class="av-marca"><i data-ic="orgao"></i> <b>Painel de Pregões</b></span><button type="button" class="av-recolher" title="Recolher menu"><i data-ic="recolher"></i></button>';
   nav.prepend(topo);
   const recolhido = () => document.body.classList.contains('menu-recolhido');
-  const aplicar = r => { document.body.classList.toggle('menu-recolhido', r); topo.querySelector('.av-recolher').textContent = r ? '»' : '«'; store.set('pregoes.menuRecolhido', r ? '1' : ''); };
+  const aplicar = r => { document.body.classList.toggle('menu-recolhido', r); topo.querySelector('.av-recolher').innerHTML = `<i data-ic="${r ? 'expandir' : 'recolher'}"></i>`; store.set('pregoes.menuRecolhido', r ? '1' : ''); };
   topo.querySelector('.av-recolher').onclick = () => aplicar(!recolhido());
   aplicar(store.get('pregoes.menuRecolhido') === '1');
   document.body.classList.add('com-menu');

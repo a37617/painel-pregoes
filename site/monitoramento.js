@@ -5,7 +5,8 @@ import { $, $$, esc, brl, dataBR, hojeISO, colecao, formulario, seletorPerfil, p
 import { id } from './loja.js';
 
 export const monit = colecao('monitoramento');
-const TIPOS = { orgao: '🏛️ Órgão', termo: '🔤 Palavra-chave', concorrente: '🥊 Concorrente' };
+const TIPOS = { orgao: 'Órgão', termo: 'Palavra-chave', concorrente: 'Concorrente' };
+const ICONE_TIPO = { orgao: 'orgao', termo: 'texto', concorrente: 'espadas' };
 const soDig = s => String(s || '').replace(/\D/g, '');
 const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 let v;
@@ -24,12 +25,12 @@ function desenhar() {
   const lista = monit.itens.filter(m => !perfilId || !m.perfil || m.perfil === perfilId);
   const vistos = JSON.parse(store.get('pregoes.monVistos') || '{}');
   v.innerHTML = `<div class="ap-topo ap-pad-x"><div><h2>Monitoramento</h2><p class="m">Vigie órgãos e palavras-chave (novos pregões abertos) e acompanhe o que seus concorrentes ganham.</p></div>
-      <span class="ap-acoes">${seletorPerfil('pregoes.monPerfil')}<button class="btn-primary" id="monNovo">+ Vigiar</button></span></div>
+      <span class="ap-acoes">${seletorPerfil('pregoes.monPerfil')}<button class="btn-primary" id="monNovo"><i data-ic="mais"></i> Vigiar</button></span></div>
     ${lista.length ? `<div class="ui-cards">${lista.map(m => {
       const n = m.tipo === 'concorrente' ? null : pregoesDo(m);
       const novos = n ? n.filter(r => !(vistos[m.id] || []).includes(r.id)).length : 0;
       return `<div class="card ap-pad ui-mon">
-        <div class="ap-topo"><div><span class="m">${TIPOS[m.tipo]}</span><h3>${esc(m.nome || m.valor)}</h3>${m.nome && m.nome !== m.valor ? `<div class="m">${esc(m.valor)}</div>` : ''}${m.perfil ? `<span class="ap-tag">${esc(nomePerfil(m.perfil))}</span>` : ''}</div>
+        <div class="ap-topo"><div><span class="m"><i data-ic="${ICONE_TIPO[m.tipo]}"></i> ${TIPOS[m.tipo]}</span><h3>${esc(m.nome || m.valor)}</h3>${m.nome && m.nome !== m.valor ? `<div class="m">${esc(m.valor)}</div>` : ''}${m.perfil ? `<span class="ap-tag">${esc(nomePerfil(m.perfil))}</span>` : ''}</div>
           <button class="btn-ghost" data-editar="${esc(m.id)}">Editar</button></div>
         ${m.tipo === 'concorrente'
           ? `<button class="btn-ghost" data-conc="${esc(m.id)}">Ver itens ganhos nos últimos 12 meses</button><div class="ui-conc" id="conc-${esc(m.id)}"></div>`
@@ -74,7 +75,7 @@ async function concorrente(m) {
     out.innerHTML = `<p><b>${esc(l[0].nomeRazaoSocialFornecedor || '')}</b> ${l[0].porteFornecedorNome ? `(${esc(l[0].porteFornecedorNome)})` : ''}: <b>${d.total}</b> item(ns) ganho(s), ${brl(total, 0)} homologados${d.total > l.length ? ` (mostrando ${l.length})` : ''}.</p>
       <p class="m">Por UF: ${Object.entries(porUf).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([u, s]) => `<b>${esc(u)}</b> ${brl(s, 0)}`).join(' · ')}</p>
       <div class="tscroll"><table class="ui-tabela"><thead><tr><th>Data</th><th>Pregão</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Total</th></tr></thead><tbody>
-        ${l.slice(0, 50).map(x => `<tr><td>${dataBR(x.dataResultadoPncp)}</td><td>${link(x.idContratacaoPNCP) ? `<a href="${link(x.idContratacaoPNCP)}" target="_blank" rel="noopener">${esc(x.idContratacaoPNCP)} ↗</a>` : esc(x.idContratacaoPNCP || '—')} · item ${x.numeroItemPncp}<div class="m">${esc(x.unidadeOrgaoUfSigla || '')}</div></td>
+        ${l.slice(0, 50).map(x => `<tr><td>${dataBR(x.dataResultadoPncp)}</td><td>${link(x.idContratacaoPNCP) ? `<a href="${link(x.idContratacaoPNCP)}" target="_blank" rel="noopener">${esc(x.idContratacaoPNCP)} <i data-ic="externo"></i></a>` : esc(x.idContratacaoPNCP || '—')} · item ${x.numeroItemPncp}<div class="m">${esc(x.unidadeOrgaoUfSigla || '')}</div></td>
           <td class="num">${(x.quantidadeHomologada || 0).toLocaleString('pt-BR')}</td><td class="num">${brl(x.valorUnitarioHomologado)}</td><td class="num">${brl(x.valorTotalHomologado)}</td></tr>`).join('')}
       </tbody></table></div>`;
   } catch (err) { out.innerHTML = `<p class="pz-ruim">Não deu certo: ${esc(err.message)}. Esta consulta usa o servidor do Wi-Fi.</p>`; }
@@ -94,7 +95,7 @@ async function editar(m) {
   if (await monit.salvar(lista)) { desenhar(); window.dispatchEvent(new CustomEvent('avisos-mudaram')); }
 }
 
-v = registrarAba('monitoramento', '🔭 Monitoramento', async () => {
+v = registrarAba('monitoramento', '<i data-ic="radar"></i> Monitoramento', async () => {
   if (!monit.pronto) { v.innerHTML = '<p class="empty">Carregando…</p>'; await monit.carregar(); }
   desenhar();
 });

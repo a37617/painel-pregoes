@@ -23,22 +23,22 @@ const store = {
 // ---------- agentes ----------
 const AGENTES = {
   buscador: {
-    nome: 'Buscador', icone: '🔎',
+    nome: 'Buscador', icone: '<i data-ic="busca"></i>',
     desc: 'Encontra pregões em linguagem natural e aplica os filtros no painel.',
     sugestoes: ['Pregões de notebooks em SP acima de R$ 100 mil', 'O que encerra nos próximos 2 dias no Nordeste?', 'Quais órgãos mais compram material de limpeza?'],
   },
   analista: {
-    nome: 'Analista de edital', icone: '📄',
+    nome: 'Analista de edital', icone: '<i data-ic="documento"></i>',
     desc: 'Lê um pregão (dados e itens do PNCP) e diz o que está sendo comprado, prazos, riscos e se vale participar.',
     sugestoes: ['Analise o pregão que eu abri por último', 'Quais pontos de atenção num pregão SRP?'],
   },
   precos: {
-    nome: 'Pesquisa de preços', icone: '💲',
+    nome: 'Pesquisa de preços', icone: '<i data-ic="preco"></i>',
     desc: 'Levanta preços de referência: valores estimados dos itens e vencedores homologados no PNCP.',
     sugestoes: ['Quanto o governo paga por notebook i5 com 16 GB?', 'Faixa de preço de cadeira de escritório em pregões abertos'],
   },
   estrategista: {
-    nome: 'Estrategista', icone: '🎯',
+    nome: 'Estrategista', icone: '<i data-ic="alvo"></i>',
     desc: 'Prioriza as oportunidades para o perfil da sua empresa e monta um plano de ação.',
     sugestoes: ['Vendo equipamentos de informática no PR e SC. Onde focar esta semana?', 'Quais órgãos de MG compram com frequência o que eu vendo?'],
   },
@@ -307,8 +307,8 @@ document.body.insertAdjacentHTML('beforeend', `
     <div><b>Agentes de IA</b><div class="ai-sub" id="aiSub"></div></div>
     <div class="ai-actions">
       <button type="button" class="btn-ghost" id="aiNew" title="Começar uma conversa nova">Nova</button>
-      <button type="button" class="btn-ghost" id="aiCfgBtn" title="Chave da API e opções">⚙</button>
-      <button type="button" class="btn-ghost" id="aiClose" title="Fechar">✕</button>
+      <button type="button" class="btn-ghost" id="aiCfgBtn" title="Chave da API e opções"><i data-ic="config"></i></button>
+      <button type="button" class="btn-ghost" id="aiClose" title="Fechar"><i data-ic="fechar"></i></button>
     </div>
   </div>
   <div class="ai-agents" id="aiAgents"></div>
@@ -353,7 +353,7 @@ function boasVindas() {
   const a = AGENTES[agente];
   $('aiLog').innerHTML = `<div class="ai-msg ai-bot"><p><b>${a.icone} ${esc(a.nome)}</b>: ${esc(a.desc)}</p>
     <div class="ai-sugs">${a.sugestoes.map(s => `<button type="button" class="ai-sug">${esc(s)}</button>`).join('')}</div>
-    ${chave() ? '' : '<p class="ai-note">Para começar, clique em ⚙ e cole a sua chave gratuita do Google AI Studio.</p>'}</div>`;
+    ${chave() ? '' : '<p class="ai-note">Para começar, clique em <i data-ic="config"></i> e cole a sua chave gratuita do Google AI Studio.</p>'}</div>`;
   $('aiLog').querySelectorAll('.ai-sug').forEach(b => b.onclick = () => enviar(b.textContent));
 }
 function novaConversa() { rodando?.abort(); chat = null; perguntas = 0; boasVindas(); }
@@ -395,9 +395,9 @@ const rolar = () => { const l = $('aiLog'); if (l.scrollHeight - l.scrollTop - l
 function mensagemErro(e) {
   if (e instanceof ApiError) {
     const m = e.message || '';
-    if (/API_KEY_INVALID|API key not valid/i.test(m) || e.status === 401) return 'Chave do Google inválida. Confira em ⚙.';
+    if (/API_KEY_INVALID|API key not valid/i.test(m) || e.status === 401) return 'Chave do Google inválida. Confira em Configurações (engrenagem no topo do chat).';
     if (e.status === 403) return 'A chave não tem acesso a este modelo. Confira se a API do Gemini está ativa no projeto do AI Studio.';
-    if (e.status === 429) return 'Limite gratuito atingido (perguntas por minuto ou por dia). Espere um pouco, ou troque para o Flash-Lite em ⚙.';
+    if (e.status === 429) return 'Limite gratuito atingido (perguntas por minuto ou por dia). Espere um pouco, ou troque para o Flash-Lite em Configurações (engrenagem no topo do chat).';
     if (e.status >= 500) return 'O Gemini está instável agora. Tente de novo em instantes.';
     return `Erro da API do Gemini (${e.status}): ${m.slice(0, 300)}`;
   }

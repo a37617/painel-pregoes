@@ -50,7 +50,7 @@ function desenhar() {
     && (!busca || [j.titulo, j.orgao, j.processo, cardPorId(j.card)?.objeto].join(' ').toLowerCase().includes(busca)))
     .sort((a, b) => (prazoDe(a) || '9999').localeCompare(prazoDe(b) || '9999'));
   v.innerHTML = `<div class="ap-topo ap-pad-x"><div><h2>Jurídico</h2><p class="m">Impugnações, esclarecimentos, recursos e contrarrazões, com prazo da Lei 14.133 e minuta pronta.</p></div>
-      <button class="btn-primary" id="jurNova">+ Nova demanda</button></div>
+      <button class="btn-primary" id="jurNova"><i data-ic="mais"></i> Nova demanda</button></div>
     <div class="card ap-pad ui-filtros">${seletorPerfil('pregoes.jurPerfil')}
       <label>Localizar<input id="jurBusca" value="${esc(busca)}" placeholder="Título, órgão, processo ou licitação"></label>
       <label>Situação<select id="jurSit"><option value="">Todas</option>${SITUACOES.map(s => `<option ${s === sit ? 'selected' : ''}>${s}</option>`).join('')}</select></label></div>
@@ -60,7 +60,7 @@ function desenhar() {
         <td><b>${esc(j.titulo || TIPOS[j.tipo]?.nome)}</b><div class="m">${esc(TIPOS[j.tipo]?.nome || '')} · ${esc(nomePerfil(j.perfil))}</div></td>
         <td>${esc((cardPorId(j.card)?.objeto || '').slice(0, 80) || j.orgao || '—')}<div class="m">${esc(j.orgao || cardPorId(j.card)?.orgao || '')}${j.processo ? ' · proc. ' + esc(j.processo) : ''}</div></td>
         <td><select data-sit="${esc(j.id)}">${SITUACOES.map(s => `<option ${s === j.situacao ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
-        <td class="ui-acoes"><button class="btn-ghost" data-minuta="${esc(j.id)}">📄 Minuta</button><button class="btn-ghost" data-editar="${esc(j.id)}">Editar</button></td></tr>`; }).join('')}
+        <td class="ui-acoes"><button class="btn-ghost" data-minuta="${esc(j.id)}"><i data-ic="documento"></i> Minuta</button><button class="btn-ghost" data-editar="${esc(j.id)}">Editar</button></td></tr>`; }).join('')}
     </tbody></table></div>` : '<p class="empty">Nenhuma demanda jurídica. Cadastre uma impugnação, esclarecimento ou recurso: o prazo é calculado e a minuta sai pronta para revisar.</p>'}
     <p class="m ui-nota">Prazos em dias úteis, sem contar feriados locais. As minutas são um ponto de partida: revise os fundamentos com um advogado antes de protocolar.</p></section>`;
   ligarSeletorPerfil(v, desenhar);
@@ -102,7 +102,7 @@ function gerarMinuta(j) {
   if (j.situacao === 'Em análise' || j.situacao === 'Documentos pendentes') juridico.salvar(juridico.itens.map(x => x.id === j.id ? { ...x, situacao: 'Minuta gerada' } : x)).then(desenhar);
 }
 
-v = registrarAba('juridico', '⚖️ Jurídico', async () => {
+v = registrarAba('juridico', '<i data-ic="balanca"></i> Jurídico', async () => {
   if (!juridico.pronto) { v.innerHTML = '<p class="empty">Carregando…</p>'; await juridico.carregar(); }
   desenhar();
 }, 'documentos'); // no menu, antes de Documentos (que é carregado primeiro por causa do timbre)

@@ -42,7 +42,7 @@ function resultado(p) {
       <div class="card kpi"><div class="l">Lucro no valor estimado</div><div class="v">${c.est && c.custo ? brl(c.lucro(c.est) * c.q, 0) : '—'}</div><div class="h">${c.est && c.custo ? `${((c.lucro(c.est) / c.est) * 100).toFixed(1)}% de margem` : 'informe custo e valor estimado'}</div></div>
       <div class="card kpi"><div class="l">Lucro no piso</div><div class="v">${isFinite(c.piso) ? brl(c.lucro(c.piso) * c.q, 0) : '—'}</div><div class="h">para ${c.q.toLocaleString('pt-BR')} un.</div></div>
     </div>
-    ${c.est && isFinite(c.piso) && c.est < c.piso ? `<div class="ui-aviso">⚠️ O valor estimado (${brl(c.est)}) já está abaixo do seu piso. Só vale disputar se conseguir custo menor.</div>` : ''}
+    ${c.est && isFinite(c.piso) && c.est < c.piso ? `<div class="ui-aviso"><i data-ic="alerta"></i> O valor estimado (${brl(c.est)}) já está abaixo do seu piso. Só vale disputar se conseguir custo menor.</div>` : ''}
     ${c.passos.length ? `<h3>Plano de lances</h3><div class="tscroll"><table class="ui-tabela"><thead><tr><th>#</th><th class="num">Lance (R$/un)</th><th class="num">Total</th><th class="num">Lucro total</th><th class="num">Margem</th></tr></thead><tbody>
       ${c.passos.map((x, i) => { const l = c.lucro(x); return `<tr class="${i === c.passos.length - 1 ? 'ui-piso' : ''}"><td>${i === c.passos.length - 1 ? 'PISO' : i + 1}</td><td class="num"><b>${brl(x)}</b></td><td class="num">${brl(x * c.q, 0)}</td><td class="num">${brl(l * c.q, 0)}</td><td class="num">${((l / x) * 100).toFixed(1)}%</td></tr>`; }).join('')}
     </tbody></table></div>` : '<p class="m">Preencha custo, impostos, margem e valor estimado para ver o plano de lances.</p>'}
@@ -53,7 +53,7 @@ function resultado(p) {
 function desenhar() {
   const p = atual || { ...PADRAO };
   v.innerHTML = `<div class="ap-topo ap-pad-x"><div><h2>Lances</h2><p class="m">Descubra seu lance mínimo antes da disputa e leve um plano de lances pronto.</p></div>
-      <span class="ap-acoes"><select id="lcPlanos"><option value="">+ Novo plano</option>${planos.itens.map(x => `<option value="${esc(x.id)}" ${x.id === p.id ? 'selected' : ''}>${esc(x.nome || cardPorId(x.card)?.objeto?.slice(0, 50) || 'Plano')}</option>`).join('')}</select></span></div>
+      <span class="ap-acoes"><select id="lcPlanos"><option value="">Novo plano…</option>${planos.itens.map(x => `<option value="${esc(x.id)}" ${x.id === p.id ? 'selected' : ''}>${esc(x.nome || cardPorId(x.card)?.objeto?.slice(0, 50) || 'Plano')}</option>`).join('')}</select></span></div>
     <div class="ui-dupla">
       <form class="card ap-pad ap-form" id="lcForm">
         <label class="ap-largo">Licitação do Kanban<select name="card">${opcoesCards().map(([val, r]) => `<option value="${esc(val)}" ${val === (p.card || '') ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
@@ -78,7 +78,7 @@ function desenhar() {
   $('#lcPlanos').onchange = e => { atual = planos.itens.find(x => x.id === e.target.value) || null; desenhar(); };
 }
 
-v = registrarAba('lances', '🎯 Lances', async () => {
+v = registrarAba('lances', '<i data-ic="alvo"></i> Lances', async () => {
   if (!planos.pronto) { v.innerHTML = '<p class="empty">Carregando…</p>'; await planos.carregar(); }
   desenhar();
 });

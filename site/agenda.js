@@ -47,7 +47,7 @@ function eventos(ini, fim) {
 function chip(e) {
   const t = TIPOS[e.tipo];
   return `<button type="button" class="ag-ev ${e.feito ? 'feito' : ''}" data-ev="${esc(e.id)}" style="--cor:${t.cor}" title="${esc(t.nome)}: ${esc(e.titulo)}${e.sub ? '\n' + esc(e.sub) : ''}">
-    ${e.diaInteiro ? '' : `<b>${hora(e.data)}</b> `}${e.tipo === 'tarefa' ? (e.feito ? '☑ ' : '☐ ') : ''}${esc(e.titulo)}</button>`;
+    ${e.diaInteiro ? '' : `<b>${hora(e.data)}</b> `}${e.tipo === 'tarefa' ? (e.feito ? '<i data-ic="caixaok"></i> ' : '<i data-ic="caixa"></i> ') : ''}${esc(e.titulo)}</button>`;
 }
 
 function desenhar() {
@@ -59,9 +59,9 @@ function desenhar() {
   const prox7 = eventos(new Date(), new Date(+hoje + 8 * 864e5)).filter(e => !e.feito);
   v.innerHTML = `<div class="card ap-pad">
     <div class="ap-topo"><div><h2>Agenda</h2><p class="m">Os encerramentos dos pregões do Kanban entram sozinhos. Use tarefas e compromissos para organizar o resto.</p></div>
-      <div class="ap-acoes"><button class="btn-ghost" id="agLembrete">${'Notification' in window && Notification.permission === 'granted' ? '🔔 Lembretes ativos' : '🔔 Ativar lembretes'}</button>
-        <button class="btn-primary" id="agNovo">+ Adicionar</button></div></div>
-    <form class="ag-rapido" id="agRapido"><span>⚡ Cadastro rápido</span><input id="agTexto" placeholder="Ex.: revisar proposta amanhã às 14h · reunião com fornecedor sexta 10h30 · enviar documentos dia 25"><button class="btn-ghost">Conferir</button></form>
+      <div class="ap-acoes"><button class="btn-ghost" id="agLembrete">${'Notification' in window && Notification.permission === 'granted' ? '<i data-ic="sino"></i> Lembretes ativos' : '<i data-ic="sino"></i> Ativar lembretes'}</button>
+        <button class="btn-primary" id="agNovo"><i data-ic="mais"></i> Adicionar</button></div></div>
+    <form class="ag-rapido" id="agRapido"><span><i data-ic="raio"></i> Cadastro rápido</span><input id="agTexto" placeholder="Ex.: revisar proposta amanhã às 14h · reunião com fornecedor sexta 10h30 · enviar documentos dia 25"><button class="btn-ghost">Conferir</button></form>
     <div class="ag-boletim"><b>Próximos 7 dias:</b> ${prox7.length ? prox7.slice(0, 6).map(e => `<span class="ag-bol-item" style="--cor:${TIPOS[e.tipo].cor}">${e.data.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })} ${e.diaInteiro ? '' : hora(e.data)} · ${esc(e.titulo.slice(0, 60))}</span>`).join('') + (prox7.length > 6 ? `<span class="m">+${prox7.length - 6}</span>` : '') : '<span class="m">nada marcado.</span>'}</div>
     <div class="ag-barra">
       <button class="btn-ghost" id="agAnt" aria-label="Mês anterior">‹</button><button class="btn-ghost" id="agHoje">Hoje</button><button class="btn-ghost" id="agProx" aria-label="Próximo mês">›</button>
@@ -114,7 +114,7 @@ function desenharLista() {
   const porDia = {};
   for (const e of evs) (porDia[diaChave(e.data)] ||= []).push(e);
   corpo.innerHTML = (Object.keys(porDia).length ? Object.entries(porDia).map(([k, lista]) => `<div class="ag-lista-dia"><h3>${new Date(k + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</h3>
-      ${lista.map(e => `<div class="ag-lista-ev">${chip(e)}${e.sub ? `<div class="m">${esc(e.sub)}</div>` : ''}${e.notas ? `<div class="m">📝 ${esc(e.notas)}</div>` : ''}</div>`).join('')}</div>`).join('')
+      ${lista.map(e => `<div class="ag-lista-ev">${chip(e)}${e.sub ? `<div class="m">${esc(e.sub)}</div>` : ''}${e.notas ? `<div class="m"><i data-ic="lapis"></i> ${esc(e.notas)}</div>` : ''}</div>`).join('')}</div>`).join('')
     : '<p class="empty">Nada marcado neste mês.</p>') + legenda(evs.length);
   ligar(corpo, evs);
 }
@@ -146,7 +146,7 @@ function editar(e) {
   const dlg = document.createElement('dialog');
   dlg.className = 'ap-dialog';
   dlg.innerHTML = `<form class="ap-form">
-    <div class="ap-topo"><h2>${novo ? (e.deTexto ? 'Conferir antes de salvar' : 'Adicionar à agenda') : 'Editar'}</h2><button type="button" class="btn-ghost ag-x">Fechar ✕</button></div>
+    <div class="ap-topo"><h2>${novo ? (e.deTexto ? 'Conferir antes de salvar' : 'Adicionar à agenda') : 'Editar'}</h2><button type="button" class="btn-ghost ag-x">Fechar <i data-ic="fechar"></i></button></div>
     ${e.deTexto ? `<p class="ap-largo m">Entendi assim a frase "<i>${esc(e.deTexto)}</i>". Ajuste se precisar.</p>` : ''}
     <label>Tipo<select name="tipo"><option value="tarefa" ${e.tipo === 'tarefa' ? 'selected' : ''}>Tarefa</option><option value="compromisso" ${e.tipo === 'compromisso' ? 'selected' : ''}>Compromisso</option></select></label>
     <label>Empresa<select name="perfil"><option value="">Pessoal / geral</option>${estado.perfis.map(p => `<option value="${esc(p.id)}" ${p.id === e.perfil ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></label>
@@ -246,7 +246,7 @@ function verificarLembretes() {
 }
 
 // ---------- início ----------
-registrarAba('agenda', '📅 Agenda', desenhar);
+registrarAba('agenda', '<i data-ic="agenda"></i> Agenda', desenhar);
 async function iniciar() {
   try { itens = await carregar('agenda'); } catch {}
   carregado = true;

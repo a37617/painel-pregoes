@@ -109,6 +109,11 @@ footer a{color:var(--accent)}
 <link rel="stylesheet" href="precos.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="fase3.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="design.css">
+<script type="module" src="icones.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -118,9 +123,9 @@ footer a{color:var(--accent)}
       <div class="sub">Todos os pregões com propostas abertas no PNCP, atualizados automaticamente · Lei 14.133/2021</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn-primary" id="aiBtn" type="button" title="Perguntar aos agentes de IA sobre os pregões">🤖 Agentes IA</button>
-      <a class="btn-ghost extlink" href="extensao.zip" download title="Baixar a extensão do Chrome que avisa quando surge pregão com as suas palavras-chave">⬇ Extensão do Chrome</a>
-      <button class="btn-ghost" id="themeBtn" type="button" title="Alternar tema">◐ Tema</button>
+      <button class="btn-primary" id="aiBtn" type="button" title="Perguntar aos agentes de IA sobre os pregões"><i data-ic="robo"></i> Agentes IA</button>
+      <a class="btn-ghost extlink" href="extensao.zip" download title="Baixar a extensão do Chrome que avisa quando surge pregão com as suas palavras-chave"><i data-ic="baixar"></i> Extensão do Chrome</a>
+      <button class="btn-ghost" id="themeBtn" type="button" title="Alternar tema"><i data-ic="tema"></i> Tema</button>
     </div>
   </header>
 
@@ -144,7 +149,7 @@ footer a{color:var(--accent)}
         <option value="30">até 30 dias</option>
       </select>
     </label>
-    <button class="btn-ghost" id="go" type="button" title="Busca de novo o arquivo de dados">↻ Recarregar dados</button>
+    <button class="btn-ghost" id="go" type="button" title="Busca de novo o arquivo de dados"><i data-ic="atualizar"></i> Recarregar dados</button>
   </form>
 
   <div class="status"><div class="progress" id="prog"><i></i></div><span id="status">Carregando pregões…</span></div>
@@ -246,7 +251,7 @@ function saveFilters(){
 }
 
 const themes = ['auto','light','dark'];
-function applyTheme(t){ if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = t; $('themeBtn').textContent = '◐ Tema: ' + {auto:'auto',light:'claro',dark:'escuro'}[t]; }
+function applyTheme(t){ if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = t; $('themeBtn').innerHTML = '<i data-ic="tema"></i> Tema: ' + {auto:'auto',light:'claro',dark:'escuro'}[t]; }
 let theme = store.get('pregoes.theme') || 'auto'; applyTheme(theme);
 $('themeBtn').onclick = () => { theme = themes[(themes.indexOf(theme)+1)%3]; store.set('pregoes.theme', theme); applyTheme(theme); };
 
@@ -403,7 +408,7 @@ function renderChips(){
   if (facet.uf) c.push(['uf', 'UF: ' + facet.uf]);
   if (facet.mun) c.push(['mun', 'Município: ' + facet.mun]);
   if (facet.org) c.push(['org', 'Órgão: ' + facet.org]);
-  $('chips').innerHTML = c.map(([k,l]) => `<button type="button" class="chip" data-k="${k}" title="Remover filtro">${esc(l)} ✕</button>`).join('');
+  $('chips').innerHTML = c.map(([k,l]) => `<button type="button" class="chip" data-k="${k}" title="Remover filtro">${esc(l)} <i data-ic="fechar"></i></button>`).join('');
   $('chips').querySelectorAll('.chip').forEach(b => b.onclick = () => { facet[b.dataset.k] = null; render(); });
 }
 
@@ -439,7 +444,7 @@ function renderTable(){
       <td class="m">${fmtDate(r.pub)}</td></tr>`).join('');
   $('tb').querySelectorAll('tr[data-i]').forEach(tr => tr.onclick = () => openDrawer(VIEW[+tr.dataset.i]));
   const pages = Math.ceil(VIEW.length / PAGE);
-  $('pager').innerHTML = pages > 1 ? `<button type="button" class="btn-ghost" ${page===0?'disabled':''} id="prev">← Anterior</button> página ${page+1} de ${pages} <button type="button" class="btn-ghost" ${page>=pages-1?'disabled':''} id="next">Próxima →</button>` : '';
+  $('pager').innerHTML = pages > 1 ? `<button type="button" class="btn-ghost" ${page===0?'disabled':''} id="prev"><i data-ic="voltar"></i> Anterior</button> página ${page+1} de ${pages} <button type="button" class="btn-ghost" ${page>=pages-1?'disabled':''} id="next">Próxima <i data-ic="seguir"></i></button>` : '';
   if (pages > 1) { $('prev').onclick = () => { page--; renderTable(); }; $('next').onclick = () => { page++; renderTable(); }; }
 }
 document.querySelectorAll('th[data-k]').forEach(th => th.onclick = () => {
@@ -469,13 +474,13 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(
 
 async function openDrawer(r){
   const x = r.raw, d = $('drawer');
-  d.innerHTML = `<button type="button" class="close btn-ghost" id="dclose">Fechar ✕</button>
+  d.innerHTML = `<button type="button" class="close btn-ghost" id="dclose">Fechar <i data-ic="fechar"></i></button>
     <div class="m" style="color:var(--muted);font-size:12px">${esc(x.modalidadeNome)} nº ${esc(x.numeroCompra)} · ${badge(r)}</div>
     <h3>${esc(r.obj)}</h3>
     <div class="links">
-      <button type="button" class="ai-analisar" data-id="${esc(r.id)}">🤖 Analisar com IA</button>
-      <a href="${pncpLink(r)}" target="_blank" rel="noopener">Ver no PNCP ↗</a>
-      ${x.linkSistemaOrigem ? `<a href="${esc(x.linkSistemaOrigem)}" target="_blank" rel="noopener">Sistema de origem ↗</a>` : ''}
+      <button type="button" class="ai-analisar" data-id="${esc(r.id)}"><i data-ic="robo"></i> Analisar com IA</button>
+      <a href="${pncpLink(r)}" target="_blank" rel="noopener">Ver no PNCP <i data-ic="externo"></i></a>
+      ${x.linkSistemaOrigem ? `<a href="${esc(x.linkSistemaOrigem)}" target="_blank" rel="noopener">Sistema de origem <i data-ic="externo"></i></a>` : ''}
     </div>
     <dl class="dl">
       <dt>Órgão</dt><dd>${esc(r.org)}<br><span class="m" style="color:var(--muted)">${esc(r.unidade || '')} · CNPJ ${esc(r.cnpj)}</span></dd>
@@ -507,7 +512,7 @@ async function openDrawer(r){
     for (const tr of withRes) {
       try {
         const res = await getJSON(`${API2}/orgaos/${r.cnpj}/compras/${x.anoCompra}/${x.sequencialCompra}/itens/${tr.dataset.n}/resultados`, 1) || [];
-        if (res.length) tr.querySelector('.res').innerHTML = res.map(z => `🏆 <b>${esc(z.nomeRazaoSocialFornecedor || z.niFornecedor)}</b> · ${brl(z.valorUnitarioHomologado)}/un`).join('<br>');
+        if (res.length) tr.querySelector('.res').innerHTML = res.map(z => `<i data-ic="trofeu"></i> <b>${esc(z.nomeRazaoSocialFornecedor || z.niFornecedor)}</b> · ${brl(z.valorUnitarioHomologado)}/un`).join('<br>');
       } catch {}
     }
   } catch (e) {
